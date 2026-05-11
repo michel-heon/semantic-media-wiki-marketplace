@@ -27,11 +27,13 @@ packer {
 # ---------------------------------------------------------------------------
 
 locals {
-  # Format : {smw_version}.{YYYYMMDD} → ex: 6.0.1.20260511
-  image_version = "${var.smw_version}.${var.build_date}"
+  # Azure Compute Gallery exige exactement Major.Minor.Patch (3 entiers)
+  # On encode smw_major.smw_minor.build_date → ex: 6.0.20260511
+  smw_parts     = split(".", var.smw_version)
+  image_version = "${local.smw_parts[0]}.${local.smw_parts[1]}.${var.build_date}"
 
   # Nom de l'image pour identification dans les logs
-  image_label = "smw-knowledge-base-${local.image_version}"
+  image_label = "smw-knowledge-base-${var.smw_version}-${var.build_date}"
 }
 
 # ---------------------------------------------------------------------------
@@ -46,9 +48,9 @@ source "azure-arm" "smw" {
   client_id       = var.azure_client_id
   client_secret   = var.azure_client_secret
 
-  # Storage Account temporaire pour les artefacts de build
-  resource_group_name = var.azure_resource_group
-  storage_account     = var.storage_account
+  # Image managée intermédiaire (nécessaire pour publication en Compute Gallery)
+  managed_image_resource_group_name = var.azure_resource_group
+  managed_image_name                = "tmp-${local.image_label}"
 
   # Image de base Azure endorsée (Ubuntu 22.04 LTS Gen2 — ADR-001)
   image_publisher = "Canonical"
