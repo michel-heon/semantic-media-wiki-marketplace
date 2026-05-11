@@ -55,9 +55,14 @@ setup: ## Installer les prérequis (packer, az cli)
 .PHONY: check-env
 check-env: ## Vérifier les variables d'environnement requises avant build
 	@printf "$(CYAN)>> Vérification des variables d'environnement...$(NC)\n"
-	@missing=0; \
-	for var in ARM_SUBSCRIPTION_ID ARM_TENANT_ID ARM_CLIENT_ID ARM_CLIENT_SECRET; do \
-	    if [ -z "$$(eval echo \$${$$var})" ]; then \
+	@set -a; \
+	[ -f "$(ENV_DEV)" ] && . "$(ENV_DEV)"; \
+	[ -f "$(ENV_USER)" ] && . "$(ENV_USER)"; \
+	set +a; \
+	missing=0; \
+	for var in AZURE_SUBSCRIPTION_ID AZURE_TENANT_ID AZURE_CLIENT_ID AZURE_CLIENT_SECRET; do \
+	    val=$$(printenv "$$var" 2>/dev/null); \
+	    if [ -z "$$val" ] || [ "$$val" = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" ]; then \
 	        printf "$(RED)  MANQUANT: $${var}$(NC)\n"; \
 	        missing=$$((missing+1)); \
 	    else \
@@ -89,12 +94,10 @@ config: ## Générer env/generated/config.make depuis les fichiers .env
 	@printf "# Fichier généré automatiquement par 'make config' — NE PAS ÉDITER\n" > "$(PKRVARS)"
 	@[ -f "$(ENV_DEV)" ] && \
 	    grep -v '^#' "$(ENV_DEV)" | grep '=' | \
-	    sed 's/\([A-Z_]*\)=\(.*\)/\L\1 = \2/' | \
-	    sed 's/"\(.*\)"/"\1"/' >> "$(PKRVARS)" || true
+	    sed 's/\([A-Z_]*\)=\(.*\)/\L\1\E = \2/' >> "$(PKRVARS)" || true
 	@[ -f "$(ENV_USER)" ] && \
 	    grep -v '^#' "$(ENV_USER)" | grep '=' | \
-	    sed 's/\([A-Z_]*\)=\(.*\)/\L\1 = \2/' | \
-	    sed 's/"\(.*\)"/"\1"/' >> "$(PKRVARS)" || true
+	    sed 's/\([A-Z_]*\)=\(.*\)/\L\1\E = \2/' >> "$(PKRVARS)" || true
 	@printf "$(GREEN)>> Configuration générée$(NC)\n"
 
 ##@ Packer — Build VM
