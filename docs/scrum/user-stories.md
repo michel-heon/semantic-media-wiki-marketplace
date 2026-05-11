@@ -1,6 +1,6 @@
 # Récits utilisateur — SMW Azure Marketplace
 
-**Objet** : Elaboration complète des 36 récits utilisateur issus des 6 épopées Scrum du projet.  
+**Objet** : Elaboration complète des 42 récits utilisateur issus des 6 épopées Scrum du projet.  
 Chaque récit est nécessaire à la fermeture de son épopée et suffisant (pas de gold-plating).  
 **Références** : [epics.md](epics.md) · [personas.md](personas.md) · ADR-001 (versions canoniques)
 
@@ -19,36 +19,42 @@ Ubuntu 22.04 LTS · PHP 8.2-FPM · MySQL 8.x · MediaWiki 1.43.x · SMW 6.0.1 ·
 | US-01.4 | Cache APT/Composer Blob Storage | EPIC-01 | P1 Thomas | Must |
 | US-01.5 | Nommage versionné gallery | EPIC-01 | P1 Thomas | Must |
 | US-01.6 | Journalisation provisioners | EPIC-01 | P1 Thomas | Must |
+| US-01.7 | Validation fin de sprint EPIC-01 | EPIC-01 | P6 Karim | Must |
 | US-02.1 | Paramètres ARM au déploiement | EPIC-02 | P1 Thomas | Must |
 | US-02.2 | Wiki HTTPS au premier boot | EPIC-02 | Client | Must |
 | US-02.3 | Idempotence firstboot.service | EPIC-02 | P1 Thomas | Must |
 | US-02.4 | Aucun secret dans l'image | EPIC-02 | P1 Thomas | Must |
 | US-02.5 | Log firstboot lisible | EPIC-02 | Client | Should |
 | US-02.6 | Workflow itération rapide dev | EPIC-02 | P1 Thomas | Should |
+| US-02.7 | Validation fin de sprint EPIC-02 | EPIC-02 | P6 Karim | Must |
 | US-03.1 | Rapport 15 contrôles AMAT | EPIC-03 | P3 Félix | Must |
 | US-03.2 | Hardening SSH automatisé | EPIC-03 | P3 Félix | Must |
 | US-03.3 | TLS 1.2+ vérifié par tests | EPIC-03 | P3 Félix | Must |
 | US-03.4 | waagent deprovision dernière étape | EPIC-03 | P3 Félix | Must |
 | US-03.5 | Traçabilité non-conformités AMAT | EPIC-03 | P1 Thomas | Should |
 | US-03.6 | Rapport certif avant Preview | EPIC-03 | P2 Nadia | Must |
+| US-03.7 | Validation fin de sprint EPIC-03 | EPIC-03 | P6 Karim | Must |
 | US-04.1 | Création offre Partner Center | EPIC-04 | P2 Nadia | Must |
 | US-04.2 | Permissions gallery Compute Reader | EPIC-04 | P2 Nadia | Must |
 | US-04.3 | Plan technique lié image certifiée | EPIC-04 | P2 Nadia | Must |
 | US-04.4 | Runbook publication pas-à-pas | EPIC-04 | P2 Nadia | Must |
 | US-04.5 | Plan tarifaire BYOL/Free GPL-2.0 | EPIC-04 | P5 Jérôme | Must |
 | US-04.6 | Audience Preview restreinte | EPIC-04 | P2 Nadia | Must |
+| US-04.7 | Validation fin de sprint EPIC-04 | EPIC-04 | P6 Karim | Must |
 | US-05.1 | Description longue HTML conforme | EPIC-05 | P4 Claire | Must |
 | US-05.2 | 4 logos PNG formats requis | EPIC-05 | P4 Claire | Must |
 | US-05.3 | 3 screenshots 1280×720 annotés | EPIC-05 | P4 Claire | Must |
 | US-05.4 | Guide post-déploiement public | EPIC-05 | P4 Claire | Must |
 | US-05.5 | Validation listing PO | EPIC-05 | P5 Jérôme | Must |
 | US-05.6 | Checklist mise à jour listing | EPIC-05 | P5 Jérôme | Should |
+| US-05.7 | Validation fin de sprint EPIC-05 | EPIC-05 | P6 Karim | Must |
 | US-06.1 | Soumission Preview et validation | EPIC-06 | P2 Nadia | Must |
 | US-06.2 | Smoke tests VM Preview | EPIC-06 | P1 Thomas | Must |
 | US-06.3 | Soumission Live | EPIC-06 | P2 Nadia | Must |
 | US-06.4 | Dashboard Partner Center partagé | EPIC-06 | P5 Jérôme | Should |
 | US-06.5 | URLs campagne ocid/utm_* | EPIC-06 | P5 Jérôme | Should |
 | US-06.6 | Runbook gestion des rejets | EPIC-06 | P2 Nadia | Must |
+| US-06.7 | Validation fin de sprint EPIC-06 | EPIC-06 | P6 Karim | Must |
 
 ---
 
@@ -231,6 +237,39 @@ Ubuntu 22.04 LTS · PHP 8.2-FPM · MySQL 8.x · MediaWiki 1.43.x · SMW 6.0.1 ·
 - Bloque : US-03.1 (smoke tests lisent les logs)
 
 **ADR(s)** : [ADR-617](../adr/617-DEVOPS-packer-outil-construction-images-vm.md) · [ADR-600](../adr/600-DEVOPS-bootstrap-configuration-management.md)
+
+---
+
+### US-01.7 — Validation de fin de sprint EPIC-01
+
+**Épopée** : EPIC-01 | **Persona** : P6 Karim B. — Validateur Sprint | **Priorité** : Must
+
+> En tant que **Validateur Sprint**, je veux vérifier que tous les critères d'acceptation des US d'EPIC-01 sont satisfaits et approuver le commit de fermeture du sprint, afin de garantir que l'incrément Pipeline Packer est production-ready avant de démarrer EPIC-03.
+
+#### Critères d'acceptation
+
+- [ ] `packer validate` s'exécute sans avertissement sur `main` (US-01.2).
+- [ ] `make vm-build` produit une image dans `galSMWMarketplace` avec le format `{smw_version}.{YYYYMMDD}` (US-01.3).
+- [ ] Le build complet (avec cache) s'effectue en moins de 20 min.
+- [ ] `packer/variables.pkr.hcl` contient toutes les versions canoniques ADR-001 ; aucune version hardcodée dans les provisioners 01-09 (US-01.1).
+- [ ] `/var/log/smw-install.log` est absent de l'image finale généralisée (US-01.6).
+- [ ] Toutes les US-01.1 à US-01.6 ont leurs critères d'acceptation satisfaits.
+
+#### Tâches
+
+- [ ] Exécuter `packer validate` et confirmer zéro avertissement.
+- [ ] Vérifier la présence de l'image dans `galSMWMarketplace` avec le nom de version attendu.
+- [ ] Contrôler que le temps de build (avec cache) est inférieur à 20 min.
+- [ ] Inspecter `packer/variables.pkr.hcl` : versions canoniques ADR-001 présentes, aucune version hardcodée dans les provisioners.
+- [ ] Confirmer que `/var/log/smw-install.log` est supprimé par `09-cleanup-generalize.sh`.
+- [ ] Créer le commit de fermeture tagué selon ADR-603 (ex. `v0.1.0-epic01-done`).
+
+#### Dépendances
+
+- Dépend de : US-01.1 à US-01.6 (toutes complètes)
+- Bloque : EPIC-02 (démarrage), EPIC-03 (tests AMAT sur l'image générée)
+
+**ADR(s)** : [ADR-603](../adr/603-DEVOPS-git-workflow-et-strategie-versioning.md) · [ADR-617](../adr/617-DEVOPS-packer-outil-construction-images-vm.md) · [ADR-001](../adr/001-META-definition-projet-smw-marketplace.md)
 
 ---
 
@@ -417,6 +456,39 @@ Ubuntu 22.04 LTS · PHP 8.2-FPM · MySQL 8.x · MediaWiki 1.43.x · SMW 6.0.1 ·
 
 ---
 
+### US-02.7 — Validation de fin de sprint EPIC-02
+
+**Épopée** : EPIC-02 | **Persona** : P6 Karim B. — Validateur Sprint | **Priorité** : Must
+
+> En tant que **Validateur Sprint**, je veux vérifier que tous les critères d'acceptation des US d'EPIC-02 sont satisfaits et approuver le commit de fermeture du sprint, afin de garantir que le runtime firstboot est opérationnel et sécurisé avant go-to-market.
+
+#### Critères d'acceptation
+
+- [ ] Une VM déployée depuis la gallery termine son premier boot sans erreur et sans intervention manuelle (US-02.2).
+- [ ] `Special:Version` confirme SMW 6.0.1 et MediaWiki 1.43.x sur la VM déployée.
+- [ ] `smw-firstboot.service` est idempotent : deux exécutions consécutives ne corrompent pas le wiki (US-02.3).
+- [ ] Aucun secret (mot de passe, clé SSH de build, historique bash) n'est présent dans l'image généralisée (US-02.4).
+- [ ] `arm/mainTemplate.json` est validé par `az deployment group validate`.
+- [ ] Toutes les US-02.1 à US-02.6 ont leurs critères d'acceptation satisfaits.
+
+#### Tâches
+
+- [ ] Déployer la VM depuis la gallery et vérifier le premier boot sans erreur.
+- [ ] Vérifier `Special:Version` : SMW 6.0.1, MediaWiki 1.43.x, PHP 8.2, Ubuntu 22.04 LTS.
+- [ ] Exécuter `smw-firstboot.service` deux fois et confirmer l'idempotence.
+- [ ] Inspecter l'image pour l'absence de secrets (`/root/.ssh`, historique bash, clés API).
+- [ ] Exécuter `az deployment group validate` sur `arm/mainTemplate.json`.
+- [ ] Créer le commit de fermeture tagué selon ADR-603.
+
+#### Dépendances
+
+- Dépend de : US-02.1 à US-02.6 (toutes complètes)
+- Bloque : EPIC-04 (configuration Partner Center avec image firstboot validée)
+
+**ADR(s)** : [ADR-603](../adr/603-DEVOPS-git-workflow-et-strategie-versioning.md) · [ADR-614](../adr/614-DEVOPS-dev-vm-iteration-workflow.md) · [ADR-001](../adr/001-META-definition-projet-smw-marketplace.md)
+
+---
+
 ## EPIC-03 — Sécurité, hardening et certification AMAT
 
 **Valeur** : L'image passe la certification AMAT de Microsoft et ne contient aucune vulnérabilité bloquante à la soumission Partner Center.
@@ -593,6 +665,39 @@ Ubuntu 22.04 LTS · PHP 8.2-FPM · MySQL 8.x · MediaWiki 1.43.x · SMW 6.0.1 ·
 - Bloque : US-04.1 (soumission Preview présuppose certification OK)
 
 **ADR(s)** : [ADR-300](../adr/300-SEC-securite-hardening-vm-certification.md) · [ADR-800](../adr/800-BIZ-publication-azure-marketplace-vm-offer.md)
+
+---
+
+### US-03.7 — Validation de fin de sprint EPIC-03
+
+**Épopée** : EPIC-03 | **Persona** : P6 Karim B. — Validateur Sprint | **Priorité** : Must
+
+> En tant que **Validateur Sprint**, je veux valider que les 15 contrôles AMAT passent et signer-off l'image avant soumission, afin de bloquer toute soumission Partner Center sans rapport AMAT validé par P6.
+
+#### Critères d'acceptation
+
+- [ ] `make vm-test` : zéro contrôle AMAT en échec sur les 15 contrôles (US-03.1).
+- [ ] `sshd_config` : `PasswordAuthentication no` et `PermitRootLogin no` vérifiés (US-03.2).
+- [ ] `openssl s_client` confirme TLS 1.2+ et l'absence de TLS 1.0/1.1 sur le port 443 (US-03.3).
+- [ ] `waagent -deprovision+user -force` est la dernière instruction de `09-cleanup-generalize.sh` (US-03.4).
+- [ ] Un rapport de certification est disponible dans `docs/certification/` (US-03.6).
+- [ ] Toutes les US-03.1 à US-03.6 ont leurs critères d'acceptation satisfaits.
+
+#### Tâches
+
+- [ ] Exécuter `make vm-test` et confirmer zéro échec sur les 15 contrôles AMAT.
+- [ ] Inspecter `sshd_config` : `PasswordAuthentication no`, `PermitRootLogin no`.
+- [ ] Tester TLS : `openssl s_client -connect [host]:443` et confirmer TLS 1.2+, absence TLS 1.0/1.1.
+- [ ] Inspecter `09-cleanup-generalize.sh` : `waagent -deprovision+user -force` est la dernière ligne.
+- [ ] Vérifier la présence du rapport dans `docs/certification/`.
+- [ ] Créer le commit de fermeture tagué selon ADR-603.
+
+#### Dépendances
+
+- Dépend de : US-03.1 à US-03.6 (toutes complètes)
+- Bloque : US-04.3 (configuration plan technique), US-06.1 (soumission Preview)
+
+**ADR(s)** : [ADR-603](../adr/603-DEVOPS-git-workflow-et-strategie-versioning.md) · [ADR-300](../adr/300-SEC-securite-hardening-vm-certification.md) · [ADR-800](../adr/800-BIZ-publication-azure-marketplace-vm-offer.md)
 
 ---
 
@@ -774,6 +879,39 @@ Ubuntu 22.04 LTS · PHP 8.2-FPM · MySQL 8.x · MediaWiki 1.43.x · SMW 6.0.1 ·
 
 ---
 
+### US-04.7 — Validation de fin de sprint EPIC-04
+
+**Épopée** : EPIC-04 | **Persona** : P6 Karim B. — Validateur Sprint | **Priorité** : Must
+
+> En tant que **Validateur Sprint**, je veux valider la configuration Partner Center complète et approuver le commit de fermeture, afin de garantir que l'offre est correctement configurée avant la soumission Preview.
+
+#### Critères d'acceptation
+
+- [ ] L'offre `smw-knowledge-base` existe dans Partner Center à l'état `Draft` ou supérieur (US-04.1).
+- [ ] `az role assignment list` confirme les 2 Service Principals avec `Compute Gallery Image Reader` sur `galSMWMarketplace` (US-04.2).
+- [ ] Le plan technique référence l'image certifiée depuis la gallery (US-04.3).
+- [ ] L'audience preview compte au moins 1 compte de test Azure configuré (US-04.6).
+- [ ] Le runbook de publication est disponible dans `docs/` (US-04.4).
+- [ ] Toutes les US-04.1 à US-04.6 ont leurs critères d'acceptation satisfaits.
+
+#### Tâches
+
+- [ ] Vérifier l'état de l'offre dans Partner Center (`Draft`+).
+- [ ] Exécuter `az role assignment list` et confirmer les 2 Service Principals avec le bon rôle.
+- [ ] Confirmer le lien plan technique → image certifiée dans la gallery.
+- [ ] Vérifier qu'au moins 1 compte de test figure dans l'audience preview.
+- [ ] Vérifier la présence du runbook dans `docs/`.
+- [ ] Créer le commit de fermeture tagué selon ADR-603.
+
+#### Dépendances
+
+- Dépend de : US-04.1 à US-04.6 (toutes complètes)
+- Bloque : US-06.1 (soumission Preview Partner Center)
+
+**ADR(s)** : [ADR-603](../adr/603-DEVOPS-git-workflow-et-strategie-versioning.md) · [ADR-800](../adr/800-BIZ-publication-azure-marketplace-vm-offer.md) · [ADR-001](../adr/001-META-definition-projet-smw-marketplace.md)
+
+---
+
 ## EPIC-05 — Contenu listing et assets Marketplace
 
 **Valeur** : Le listing Marketplace est complet, conforme aux exigences Microsoft, et efficace pour convaincre un acheteur potentiel.
@@ -952,6 +1090,39 @@ Ubuntu 22.04 LTS · PHP 8.2-FPM · MySQL 8.x · MediaWiki 1.43.x · SMW 6.0.1 ·
 
 ---
 
+### US-05.7 — Validation de fin de sprint EPIC-05
+
+**Épopée** : EPIC-05 | **Persona** : P6 Karim B. — Validateur Sprint | **Priorité** : Must
+
+> En tant que **Validateur Sprint**, je veux valider les assets et le contenu listing et approuver le commit de fermeture, afin de garantir que le listing est conforme Microsoft section 100 avant soumission Preview.
+
+#### Critères d'acceptation
+
+- [ ] La description longue contient les versions exactes PHP 8.2, MediaWiki 1.43.x, SMW 6.0.1, Ubuntu 22.04 LTS conformément à ADR-001 (US-05.1).
+- [ ] Les 4 formats de logo PNG (48×48, 90×90, 216×216, 255×115) sont présents dans `docs/marketplace-assets/` avec les dimensions dans le nom de fichier (US-05.2).
+- [ ] Au moins 3 screenshots 1280×720 annotés sont disponibles dans `docs/marketplace-assets/` (US-05.3).
+- [ ] Le guide post-déploiement est publié dans `docs/` (US-05.4).
+- [ ] La validation PO (Jérôme P5) est documentée (US-05.5).
+- [ ] Toutes les US-05.1 à US-05.6 ont leurs critères d'acceptation satisfaits.
+
+#### Tâches
+
+- [ ] Lire la description longue et vérifier les versions canoniques ADR-001 (PHP 8.2, MW 1.43.x, SMW 6.0.1, Ubuntu 22.04 LTS).
+- [ ] Vérifier les 4 fichiers logo dans `docs/marketplace-assets/` (48×48, 90×90, 216×216, 255×115).
+- [ ] Vérifier les 3 screenshots 1280×720 avec annotations dans `docs/marketplace-assets/`.
+- [ ] Confirmer la présence du guide post-déploiement dans `docs/`.
+- [ ] Confirmer la signature de validation PO dans l'issue ou le PR de listing.
+- [ ] Créer le commit de fermeture tagué selon ADR-603.
+
+#### Dépendances
+
+- Dépend de : US-05.1 à US-05.6 (toutes complètes)
+- Bloque : US-06.1 (soumission Preview Partner Center)
+
+**ADR(s)** : [ADR-603](../adr/603-DEVOPS-git-workflow-et-strategie-versioning.md) · [ADR-801](../adr/801-BIZ-strategie-documentation-marketplace.md) · [ADR-001](../adr/001-META-definition-projet-smw-marketplace.md)
+
+---
+
 ## EPIC-06 — Publication live et go-to-market
 
 **Valeur** : L'offre est publiée en Live sur Azure Marketplace, mesurée et maintenue.
@@ -1122,12 +1293,45 @@ Ubuntu 22.04 LTS · PHP 8.2-FPM · MySQL 8.x · MediaWiki 1.43.x · SMW 6.0.1 ·
 
 ---
 
+### US-06.7 — Validation de fin de sprint EPIC-06
+
+**Épopée** : EPIC-06 | **Persona** : P6 Karim B. — Validateur Sprint | **Priorité** : Must
+
+> En tant que **Validateur Sprint**, je veux signer-off la publication Live et valider le go-to-market complet, afin de clôturer officiellement le plan 90 jours ADR-001 avec un incrément conforme.
+
+#### Critères d'acceptation
+
+- [ ] L'offre `smw-knowledge-base` a le statut `Live` sur Azure Marketplace (US-06.3).
+- [ ] Une VM déployée depuis le Marketplace public fonctionne sans intervention manuelle (US-06.1).
+- [ ] `Special:Version` confirme SMW 6.0.1 sur la VM de production (US-06.1).
+- [ ] Le dashboard Partner Center est accessible à toute l'équipe (US-06.4).
+- [ ] Le runbook de gestion des rejets est disponible dans `docs/` (US-06.6).
+- [ ] Toutes les US-06.1 à US-06.6 ont leurs critères d'acceptation satisfaits.
+
+#### Tâches
+
+- [ ] Vérifier le statut `Live` de l'offre dans Partner Center et sur Azure Marketplace.
+- [ ] Déployer une VM depuis le Marketplace public et confirmer le fonctionnement sans intervention.
+- [ ] Vérifier `Special:Version` : SMW 6.0.1, MediaWiki 1.43.x, PHP 8.2.
+- [ ] Confirmer l'accès au dashboard Partner Center pour toute l'équipe.
+- [ ] Vérifier la présence du runbook de gestion des rejets dans `docs/`.
+- [ ] Créer le commit de clôture du projet tagué selon ADR-603 (ex. `v1.0.0-live`).
+
+#### Dépendances
+
+- Dépend de : US-06.1 à US-06.6 (toutes complètes)
+- Bloque : — (clôture du projet — plan 90 jours ADR-001)
+
+**ADR(s)** : [ADR-603](../adr/603-DEVOPS-git-workflow-et-strategie-versioning.md) · [ADR-800](../adr/800-BIZ-publication-azure-marketplace-vm-offer.md) · [ADR-001](../adr/001-META-definition-projet-smw-marketplace.md)
+
+---
+
 ## Matrice de priorités
 
 | Priorité | Nombre de US | IDs |
 |----------|-------------|-----|
-| Must | 30 | Toutes sauf US-01.— (Must), US-02.5, US-02.6, US-03.5, US-04.—, US-05.6, US-06.4, US-06.5 |
+| Must | 36 | Toutes sauf US-02.5, US-02.6, US-03.5, US-05.6, US-06.4, US-06.5 |
 | Should | 6 | US-02.5, US-02.6, US-03.5, US-05.6, US-06.4, US-06.5 |
 | Could | 0 | — |
 
-> **Principe "nécessaire et suffisant"** : Les 30 US Must sont le chemin critique vers la publication Live. Les 6 US Should améliorent la robustesse opérationnelle et le go-to-market sans bloquer la DoD des épopées.
+> **Principe "nécessaire et suffisant"** : Les 36 US Must sont le chemin critique vers la publication Live. Les 6 US Should améliorent la robustesse opérationnelle et le go-to-market sans bloquer la DoD des épopées. Les US-X.7 (P6 Karim) sont Must : aucune épopée ne peut être déclarée Done sans sign-off du Validateur Sprint.

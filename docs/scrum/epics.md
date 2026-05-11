@@ -20,6 +20,8 @@ Les six épopées couvrent l'intégralité du chemin critique sans redondance. E
 | [EPIC-06](#epic-06--publication-live-et-go-to-market) | Publication live et go-to-market | 3 | P2 Nadia, P5 Jérôme | EPIC-03, EPIC-04, EPIC-05 |
 
 > **Phase** : 1 = MVP image + certification · 2 = Publication preview · 3 = Publication live (plan 90 jours, ADR-001)
+>
+> **P6 Karim** (Validateur Sprint) est impliqué dans **toutes les épopées** : il valide les critères d'acceptation de chaque US et approuve le commit de fermeture de sprint (DoD sign-off). Voir [personas.md](personas.md#p6--karim-b-le-validateur-sprint).
 
 ---
 
@@ -49,6 +51,7 @@ Les six épopées couvrent l'intégralité du chemin critique sans redondance. E
 | US-01.4 | Thomas (P1) | un cache APT/Composer sur Azure Blob Storage (ADR-616) | réduire le temps de build et éviter les pannes réseau upstream |
 | US-01.5 | Thomas (P1) | un nommage `{smw_version}.{YYYYMMDD}` dans la gallery | respecter ADR-001 §Nomenclature et tracer chaque build |
 | US-01.6 | Thomas (P1) | les provisioners 01-09 journalisés dans `/var/log/smw-install.log` | diagnostiquer les échecs de build sans rejouer tout le pipeline |
+| US-01.7 | Karim (P6) | valider le DoD d'EPIC-01 et approuver le commit de fermeture du sprint | garantir que l'incrément Pipeline Packer est production-ready avant de démarrer EPIC-03 |
 
 ### Critères de complétion (Definition of Done)
 
@@ -57,6 +60,7 @@ Les six épopées couvrent l'intégralité du chemin critique sans redondance. E
 - [ ] Le build complet (avec cache) s'effectue en moins de 20 min.
 - [ ] Toutes les versions sont centralisées dans `packer/variables.pkr.hcl` — aucune version hardcodée dans les provisioners.
 - [ ] `make vm-build` et `make vm-validate` sont documentées dans le README racine.
+- [ ] P6 a signé-off l'incrément : tous les critères d'acceptation des US-01.1 à US-01.6 ont été vérifiés et le commit de fermeture est approuvé (ADR-603).
 
 **ADR de référence** : [ADR-617](../adr/617-DEVOPS-packer-outil-construction-images-vm.md) · [ADR-616](../adr/616-DEVOPS-blob-storage-cache-packages-packer.md) · [ADR-614](../adr/614-DEVOPS-dev-vm-iteration-workflow.md) · [ADR-603](../adr/603-DEVOPS-git-workflow-et-strategie-versioning.md) · [ADR-001](../adr/001-META-definition-projet-smw-marketplace.md)
 
@@ -88,6 +92,7 @@ Les six épopées couvrent l'intégralité du chemin critique sans redondance. E
 | US-02.4 | Thomas (P1) | qu'aucun secret ne soit présent dans l'image Packer — tout injecté au runtime | respecter les exigences Marketplace (aucun credential par défaut) |
 | US-02.5 | Client Azure | un log lisible `/var/log/smw-firstboot.log` | diagnostiquer un premier boot en échec sans accès console Azure |
 | US-02.6 | Thomas (P1) | un workflow `make vm-dev-create` / `make provision-push` (ADR-614) | itérer sur le firstboot sans rebuild Packer complet |
+| US-02.7 | Karim (P6) | valider le DoD d'EPIC-02 et approuver le commit de fermeture du sprint | garantir que le runtime firstboot est opérationnel et sécurisé avant go-to-market |
 
 ### Critères de complétion (Definition of Done)
 
@@ -97,6 +102,7 @@ Les six épopées couvrent l'intégralité du chemin critique sans redondance. E
 - [ ] `smw-firstboot.service` est idempotent : deux exécutions consécutives ne corrompent pas le wiki.
 - [ ] Aucun secret (mot de passe, clé SSH de build) n'est présent dans l'image généralisée.
 - [ ] `arm/mainTemplate.json` est validé par `az deployment group validate`.
+- [ ] P6 a signé-off l'incrément : tous les critères d'acceptation des US-02.1 à US-02.6 ont été vérifiés et le commit de fermeture est approuvé (ADR-603).
 
 **ADR de référence** : [ADR-617](../adr/617-DEVOPS-packer-outil-construction-images-vm.md) · [ADR-614](../adr/614-DEVOPS-dev-vm-iteration-workflow.md) · [ADR-200](../adr/200-INFRA-azure-infrastructure-vm-offer.md) · [ADR-001](../adr/001-META-definition-projet-smw-marketplace.md)
 
@@ -127,6 +133,7 @@ Les six épopées couvrent l'intégralité du chemin critique sans redondance. E
 | US-03.4 | Félix (P3) | que `waagent -deprovision+user -force` soit la dernière étape de `09-cleanup-generalize.sh` | éviter la soumission d'une image non généralisée |
 | US-03.5 | Thomas (P1) | que chaque non-conformité AMAT génère un ticket Git référençant l'ADR concerné | tracer les remédiations entre builds |
 | US-03.6 | Nadia (P2) | un rapport de certification disponible avant chaque soumission Preview | confirmer la conformité avant de déclencher le cycle de review Microsoft |
+| US-03.7 | Karim (P6) | valider que les 15 contrôles AMAT passent et signer-off l'image avant soumission | bloquer toute soumission Partner Center sans rapport AMAT validé par P6 |
 
 ### Critères de complétion (Definition of Done)
 
@@ -135,6 +142,7 @@ Les six épopées couvrent l'intégralité du chemin critique sans redondance. E
 - [ ] Ports vérifiés : 443 (HTTPS), 80 (redirect HTTPS), 22 (restreint) — MySQL/PHP-FPM inaccessibles depuis l'extérieur.
 - [ ] Aucun credential, historique bash, clé SSH de build ou journal de build présent dans l'image généralisée.
 - [ ] La configuration TLS survit à un `apt upgrade` sur Apache (test de régression).
+- [ ] P6 a signé-off l'incrément : le rapport `make vm-test` (15 contrôles AMAT) a été validé et le commit de fermeture est approuvé (ADR-603).
 
 **ADR de référence** : [ADR-300](../adr/300-SEC-securite-hardening-vm-certification.md) · [ADR-800](../adr/800-BIZ-publication-azure-marketplace-vm-offer.md) §Décision 3
 
@@ -166,6 +174,7 @@ Les six épopées couvrent l'intégralité du chemin critique sans redondance. E
 | US-04.4 | Nadia (P2) | disposer d'un runbook de publication étape par étape dans `docs/` | soumettre sans dépendre d'une connaissance informelle |
 | US-04.5 | Jérôme (P5) | définir le plan tarifaire BYOL/Free, GPL-2.0 dans Partner Center | respecter la stratégie commerciale ADR-001 et ADR-800 |
 | US-04.6 | Nadia (P2) | configurer une audience preview restreinte avant publication publique | valider l'offre sur un déploiement réel sans exposer les acheteurs prématurément |
+| US-04.7 | Karim (P6) | valider la configuration Partner Center complète et approuver le commit de fermeture | garantir que l'offre est correctement configurée avant la soumission Preview |
 
 ### Critères de complétion (Definition of Done)
 
@@ -174,6 +183,7 @@ Les six épopées couvrent l'intégralité du chemin critique sans redondance. E
 - [ ] Le plan technique référence une image certifiée dans `galSMWMarketplace`.
 - [ ] L'audience preview est configurée avec au moins un compte de test.
 - [ ] Un runbook de publication est disponible dans `docs/`.
+- [ ] P6 a signé-off l'incrément : la configuration Partner Center et les permissions gallery ont été vérifiées et le commit de fermeture est approuvé (ADR-603).
 
 **ADR de référence** : [ADR-800](../adr/800-BIZ-publication-azure-marketplace-vm-offer.md) · [ADR-001](../adr/001-META-definition-projet-smw-marketplace.md)
 
@@ -206,6 +216,7 @@ Les six épopées couvrent l'intégralité du chemin critique sans redondance. E
 | US-05.4 | Claire (P4) | rédiger un guide post-déploiement public dans `docs/` | permettre aux clients de configurer leur wiki sans contacter le support |
 | US-05.5 | Jérôme (P5) | valider que la description respecte ADR-801 et les segments cibles ADR-001 | aligner le listing avec la stratégie commerciale avant soumission |
 | US-05.6 | Claire (P4) | une checklist de mise à jour du listing pour chaque release | maintenir le contenu Marketplace à jour sans oublier d'étape à chaque nouvelle version |
+| US-05.7 | Karim (P6) | valider les assets et le contenu listing et approuver le commit de fermeture | garantir que le listing est conforme Microsoft section 100 avant soumission Preview |
 
 ### Critères de complétion (Definition of Done)
 
@@ -215,6 +226,7 @@ Les six épopées couvrent l'intégralité du chemin critique sans redondance. E
 - [ ] 3 screenshots 1280×720 annotés sont produits et soumis dans Partner Center.
 - [ ] Un guide post-déploiement est disponible publiquement dans `docs/`.
 - [ ] Une checklist de mise à jour du listing est disponible pour l'équipe.
+- [ ] P6 a signé-off l'incrément : le contenu listing (description, versions canoniques, assets) a été vérifié et le commit de fermeture est approuvé (ADR-603).
 
 **ADR de référence** : [ADR-801](../adr/801-BIZ-strategie-documentation-marketplace.md) · [ADR-800](../adr/800-BIZ-publication-azure-marketplace-vm-offer.md) §Décision 5 · [ADR-001](../adr/001-META-definition-projet-smw-marketplace.md)
 
@@ -246,6 +258,7 @@ Les six épopées couvrent l'intégralité du chemin critique sans redondance. E
 | US-06.4 | Jérôme (P5) | un dashboard Partner Center partagé avec l'équipe | mesurer la traction après publication (vues, clics, déploiements) |
 | US-06.5 | Jérôme (P5) | des URLs de campagne `ocid`/`utm_*` pour les actions marketing | attribuer les conversions Marketplace aux canaux promotionnels |
 | US-06.6 | Jérôme (P5) | un runbook de gestion des rejets et des délais Microsoft | réagir rapidement sans bloquer la release en cas de rejet Microsoft |
+| US-06.7 | Karim (P6) | signer-off la publication Live et valider le go-to-market complet | clôturer officiellement le plan 90 jours ADR-001 avec un incrément conforme |
 
 ### Critères de complétion (Definition of Done)
 
@@ -255,6 +268,7 @@ Les six épopées couvrent l'intégralité du chemin critique sans redondance. E
 - [ ] Le dashboard Partner Center est accessible à toute l'équipe.
 - [ ] Les URLs de campagne sont définies et documentées dans `docs/`.
 - [ ] Le runbook de gestion des rejets est disponible dans `docs/`.
+- [ ] P6 a signé-off l'incrément final : l'offre Live, le dashboard Partner Center et les URLs de campagne ont été vérifiés ; le commit de clôture du projet est approuvé (ADR-603).
 
 **ADR de référence** : [ADR-800](../adr/800-BIZ-publication-azure-marketplace-vm-offer.md) · [ADR-801](../adr/801-BIZ-strategie-documentation-marketplace.md) · [ADR-001](../adr/001-META-definition-projet-smw-marketplace.md) §Plan 90 jours Phase 3
 
@@ -262,14 +276,14 @@ Les six épopées couvrent l'intégralité du chemin critique sans redondance. E
 
 ## Matrice épopées × personas
 
-| Épopée | P1 Thomas (Build) | P2 Nadia (Partner Center) | P3 Félix (Certification) | P4 Claire (Listing) | P5 Jérôme (PO) |
-|--------|:-----------------:|:-------------------------:|:------------------------:|:-------------------:|:--------------:|
-| EPIC-01 Pipeline Packer | **Lead** | — | Reviewer | — | Sponsor |
-| EPIC-02 Runtime firstboot + ARM | **Lead** | — | Reviewer | — | Sponsor |
-| EPIC-03 Sécurité & certification AMAT | Contributeur | Bénéficiaire | **Lead** | — | Sponsor |
-| EPIC-04 Offre Partner Center | — | **Lead** | — | — | Co-lead |
-| EPIC-05 Contenu listing & assets | — | Reviewer | — | **Lead** | Reviewer |
-| EPIC-06 Publication live & GTM | Contributeur | **Lead** | Reviewer | Contributeur | Co-lead |
+| Épopée | P1 Thomas (Build) | P2 Nadia (Partner Center) | P3 Félix (Certification) | P4 Claire (Listing) | P5 Jérôme (PO) | P6 Karim (QA Sprint) |
+|--------|:-----------------:|:-------------------------:|:------------------------:|:-------------------:|:--------------:|:--------------------:|
+| EPIC-01 Pipeline Packer | **Lead** | — | Reviewer | — | Sponsor | **Validateur** |
+| EPIC-02 Runtime firstboot + ARM | **Lead** | — | Reviewer | — | Sponsor | **Validateur** |
+| EPIC-03 Sécurité & certification AMAT | Contributeur | Bénéficiaire | **Lead** | — | Sponsor | **Validateur** |
+| EPIC-04 Offre Partner Center | — | **Lead** | — | — | Co-lead | **Validateur** |
+| EPIC-05 Contenu listing & assets | — | Reviewer | — | **Lead** | Reviewer | **Validateur** |
+| EPIC-06 Publication live & GTM | Contributeur | **Lead** | Reviewer | Contributeur | Co-lead | **Validateur** |
 
 > Aligné avec la matrice RACI de [personas.md](personas.md).
 
@@ -296,7 +310,7 @@ Phase 3 — Semaines 11-13 (Live + GTM)
 
 ## Sources
 
-- [personas.md](personas.md) — 5 personas publisher (P1–P5) et matrice RACI.
+- [personas.md](personas.md) — 6 personas publisher (P1–P6) et matrice RACI — dont P6 Karim (Validateur Sprint).
 - [smw-azure-marketplace-architecture.md](../architecture/smw-azure-marketplace-architecture.md) — architecture cible, backlog technique (§12), Definition of Done architecture (§13).
 - [ADR-001](../adr/001-META-definition-projet-smw-marketplace.md) — plan 90 jours, stack canonique, segments cibles.
 - [ADR-200](../adr/200-INFRA-azure-infrastructure-vm-offer.md) — infrastructure Azure, VM sizing.

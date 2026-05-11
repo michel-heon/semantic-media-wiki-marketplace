@@ -4,6 +4,8 @@
 
 Ce document définit les personas du projet SMW Azure Marketplace, focalisés sur la **chaîne de mise en ligne de l'offre sur Azure Marketplace**. Chaque persona représente un rôle réel de l'équipe publisher, tracé vers les processus documentés dans [ADR-800](../adr/800-BIZ-publication-azure-marketplace-vm-offer.md), [ADR-617](../adr/617-DEVOPS-packer-outil-construction-images-vm.md), [ADR-300](../adr/300-SEC-securite-hardening-vm-certification.md) et [ADR-603](../adr/603-DEVOPS-git-workflow-et-strategie-versioning.md).
 
+> **P6 — Karim B.** (Validateur Sprint) a été ajouté pour couvrir le rôle de validation de fin de sprint et d'approbation du commit de fermeture, absent des 5 personas initiaux.
+
 Ces personas servent de référence pour la rédaction des user stories, la priorisation du backlog et les critères d'acceptation.
 
 ---
@@ -17,6 +19,7 @@ Ces personas servent de référence pour la rédaction des user stories, la prio
 | [P3](#p3--félix-m-lingénieur-certification) | Félix M. | Ingénieur Certification / Sécurité | AMAT & hardening |
 | [P4](#p4--claire-b-la-rédactrice-de-listing) | Claire B. | Rédactrice de listing Marketplace | Contenu & SEO Azure |
 | [P5](#p5--jérôme-v-le-product-owner-marketplace) | Jérôme V. | Product Owner — Stratégie Marketplace | Go-to-market |
+| [P6](#p6--karim-b-le-validateur-sprint) | Karim B. | Validateur Sprint — QA Fonctionnel | Transversale — tous les sprints |
 
 ---
 
@@ -234,23 +237,67 @@ Il travaille avec 4 parties prenantes internes : Thomas (image), Nadia (Partner 
 
 ---
 
+## P6 — Karim B., le Validateur Sprint
+
+### Profil
+
+| Attribut | Valeur |
+|----------|--------|
+| **Rôle** | Validateur Sprint — QA Fonctionnel |
+| **Phase Marketplace** | Transversale — tous les sprints, toutes les phases |
+| **Expérience technique** | Moyenne-élevée — tests fonctionnels, checklists, lecture de logs, Git |
+| **Outils quotidiens** | Terminal (`make vm-test`, smoke tests), GitHub (PR review, tags), Partner Center (lecture seule), `az CLI` |
+| **Référence ADR** | ADR-603 (Git workflow — tags de fermeture sprint), ADR-300 (AMAT, smoke tests), ADR-617 (lecture rapports build) |
+
+### Contexte
+
+Karim est le garant de la qualité à chaque fin de sprint. Il n'écrit pas de code mais exécute les tests définis dans les Definitions of Done, relit les rapports produits par l'équipe, et approuve le commit de fermeture de sprint — un tag Git signé (ex. : `v0.3.0-epic01-done`) selon ADR-603. En cas de non-conformité d'un critère d'acceptation, il bloque la fermeture du sprint et ouvre un ticket de remédiation référençant la US et l'ADR concernés. Son seing est la condition nécessaire pour passer à l'épopée suivante ou soumettre une image à Partner Center.
+
+Il travaille en bout de chaîne : il reçoit les livrables de Thomas (build), Félix (rapports AMAT), Nadia (Partner Center), Claire (assets listing) et Jérôme (priorisation) — et il est le dernier verrou qualité avant que chaque incrément soit déclaré « Done ».
+
+### Objectifs
+
+- Vérifier que chaque user story du sprint a ses critères d'acceptation satisfaits avant la sprint review.
+- Exécuter ou superviser les tests de recette : `make vm-test`, smoke tests, rapports AMAT, validation des assets listing.
+- Approuver le commit de fin de sprint en signant le tag Git selon ADR-603 ou en validant la PR de clôture.
+- Maintenir un journal de validation par sprint (`docs/scrum/sprint-reviews/sprint-NN.md`) consultable par toute l'équipe.
+- Bloquer toute soumission Partner Center (Preview ou Live) en l'absence de sign-off qualité.
+
+### Points de friction actuels
+
+- La validation manuelle des critères d'acceptation est chronophage si les outils de test ne sont pas automatisés (`make vm-test` doit couvrir tous les critères DoD).
+- Les dépendances entre US (ex. : build Packer requis avant tests AMAT) peuvent retarder la validation de fin de sprint si les livrables arrivent en cascade.
+- L'approbation du commit de fin de sprint requiert la disponibilité simultanée de plusieurs livrables : image buildée + listing validé + permissions gallery configurées.
+- Un rejet Microsoft post-certification révèle une non-conformité que la validation sprint n'avait pas détectée ; Karim doit analyser la cause racine et mettre à jour la checklist DoD.
+
+### Critères de satisfaction
+
+- Toutes les US du sprint ont leurs critères d'acceptation vérifiés et documentés dans le journal de sprint review avant le commit de fermeture.
+- Le commit de fin de sprint est tagué selon ADR-603 avec une note de validation dans le message de commit.
+- Zéro US fermée sans validation explicite de P6.
+- Zéro soumission Partner Center (Preview ou Live) déclenchée sans rapport de smoke test validé par P6.
+- Un journal de sprint review est disponible dans `docs/scrum/sprint-reviews/` à l'issue de chaque sprint.
+
+---
+
 ## Matrice persona × responsabilités Marketplace
 
-| Activité | P1 Thomas (Build) | P2 Nadia (Partner Center) | P3 Félix (Certification) | P4 Claire (Listing) | P5 Jérôme (PO) |
-|----------|:-----------------:|:-------------------------:|:------------------------:|:-------------------:|:--------------:|
-| Build Packer + provisioners | **R** | — | C | — | I |
-| Publication Azure Compute Gallery | **R** | C | — | — | I |
-| Permissions gallery Partner Center (`make marketplace-gallery-permissions`) | C | **R** | — | — | I |
-| Création et configuration de l'offre Partner Center | — | **R** | — | — | A |
-| Configuration plan technique (référence image) | C | **R** | — | — | A |
-| Tests AMAT + smoke tests | C | — | **R** | — | I |
-| Remédiation hardening (provisioners) | **R** | — | A | — | I |
-| Rédaction listing (titre, description, keywords) | — | — | — | **R** | A |
-| Production assets visuels (logos, screenshots) | — | — | — | **R** | I |
-| Soumission Preview + suivi certification | — | **R** | C | — | A |
-| Publication Live | — | **R** | — | — | A |
-| Roadmap et priorisation backlog | — | — | — | — | **R** |
-| Communication Microsoft (rejets, délais) | — | C | C | — | **R** |
+| Activité | P1 Thomas (Build) | P2 Nadia (Partner Center) | P3 Félix (Certification) | P4 Claire (Listing) | P5 Jérôme (PO) | P6 Karim (QA Sprint) |
+|----------|:-----------------:|:-------------------------:|:------------------------:|:-------------------:|:--------------:|:--------------------:|
+| Build Packer + provisioners | **R** | — | C | — | I | I |
+| Publication Azure Compute Gallery | **R** | C | — | — | I | I |
+| Permissions gallery Partner Center (`make marketplace-gallery-permissions`) | C | **R** | — | — | I | I |
+| Création et configuration de l'offre Partner Center | — | **R** | — | — | A | I |
+| Configuration plan technique (référence image) | C | **R** | — | — | A | I |
+| Tests AMAT + smoke tests | C | — | **R** | — | I | C |
+| Remédiation hardening (provisioners) | **R** | — | A | — | I | I |
+| Rédaction listing (titre, description, keywords) | — | — | — | **R** | A | C |
+| Production assets visuels (logos, screenshots) | — | — | — | **R** | I | I |
+| Soumission Preview + suivi certification | — | **R** | C | — | A | C |
+| Publication Live | — | **R** | — | — | A | C |
+| Roadmap et priorisation backlog | — | — | — | — | **R** | I |
+| Communication Microsoft (rejets, délais) | — | C | C | — | **R** | I |
+| Validation de fin de sprint (DoD sign-off) | — | — | — | — | A | **R** |
 
 > **Légende RACI** : **R** = Responsible (exécutant), **A** = Accountable (décideur), **C** = Consulted, **I** = Informed
 
