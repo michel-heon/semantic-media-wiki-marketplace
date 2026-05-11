@@ -200,6 +200,106 @@ storage-list: ## Lister les packages dans le blob
 storage-urls: ## Afficher les URLs des packages dans le blob
 	@bash packer/scripts/storage-provision.sh urls
 
+##@ Marketplace — Validation Azure (ADR-800)
+
+# VM de test E2E (peut être surchargé : make vm-ensure E2E_RG=autre-rg)
+E2E_RG ?= rg-smw-marketplace-e2e
+CTT     := packer/scripts/marketplace-ctt.sh
+
+.PHONY: vm-ensure vm-stop vm-start vm-delete image-id
+.PHONY: marketplace-info marketplace-validate marketplace-all marketplace-test marketplace-tests
+
+vm-ensure: ## Créer la VM de test SMW si elle n'existe pas (depuis dernière image gallery)
+	@VM=$$(az vm list -g $(E2E_RG) --query "[?starts_with(name,'test-smw')].name | sort(@) | [-1]" -o tsv 2>/dev/null); \
+	if [ -z "$$VM" ]; then \
+		printf "$(YELLOW)  ➜ Aucune VM de test trouvée dans $(E2E_RG), création...$(NC)\n"; \
+		IMAGE_ID=$$(az sig image-version list \
+			--gallery-name $(GALLERY_NAME) \
+			--gallery-image-definition $(GALLERY_IMAGE_NAME) \
+			--resource-group $(GALLERY_RESOURCE_GROUP) \
+			--query "sort_by(@, &publishingProfile.publishedDate)[-1].id" -o tsv 2>/dev/null); \
+		if [ -z "$$IMAGE_ID" ]; then \
+			printf "$(RED)  ✗ Aucune image dans $(GALLERY_NAME)/$(GALLERY_IMAGE_NAME)$(NC)\n"; exit 1; \
+		fi; \
+		VM_NAME="test-smw-$(BUILD_DATE)"; \
+		printf "$(CYAN)  → Création VM: $$VM_NAME$(NC)\n"; \
+		az vm create \
+			--resource-group $(E2E_RG) \
+			--name "$$VM_NAME" \
+			--image "$$IMAGE_ID" \
+			--size Standard_B2s \
+			--admin-username azureuser \
+			--generate-ssh-keys \
+			--public-ip-sku Standard \
+			--output table; \
+		printf "$(GREEN)  ✓ VM créée: $$VM_NAME$(NC)\n"; \
+	else \
+		printf "$(GREEN)  ✓ VM de test existante: $$VM$(NC)\n"; \
+	fi
+
+vm-stop: ## Deallocater la VM de test SMW
+	@printf "$(CYAN)>> Arrêt de la VM de test...$(NC)\n"
+	@VM=$$(az vm list -g $(E2E_RG) --query "[?starts_with(name,'test-smw')].name | sort(@) | [-1]" -o tsv 2>/dev/null); \
+	if [ -z "$$VM" ]; then \
+		printf "$(RED)  ✗ Aucune VM de test trouvée dans $(E2E_RG)$(NC)\n"; exit 1; \
+	fi; \
+	printf "$(CYAN)  → Deallocate: $$VM$(NC)\n"; \
+	az vm deallocate -g $(E2E_RG) -n "$$VM" --no-wait; \
+	printf "$(GREEN)  ✓ Arrêt lancé: $$VM$(NC)\n"
+
+vm-start: ## Démarrer la VM de test SMW
+	@printf "$(CYAN)>> Démarrage de la VM de test...$(NC)\n"
+	@VM=$$(az vm list -g $(E2E_RG) --query "[?starts_with(name,'test-smw')].name | sort(@) | [-1]" -o tsv 2>/dev/null); \
+	if [ -z "$$VM" ]; then \
+		printf "$(RED)  ✗ Aucune VM de test trouvée dans $(E2E_RG)$(NC)\n"; exit 1; \
+	fi; \
+	printf "$(CYAN)  → Démarrage: $$VM$(NC)\n"; \
+	az vm start -g $(E2E_RG) -n "$$VM"; \
+	printf "$(GREEN)  ✓ VM démarrée: $$VM$(NC)\n"
+
+vm-delete: ## Supprimer la VM de test SMW
+	@printf "$(CYAN)>> Suppression de la VM de test...$(NC)\n"
+	@VM=$$(az vm list -g $(E2E_RG) --query "[?starts_with(name,'test-smw')].name | sort(@) | [-1]" -o tsv 2>/dev/null); \
+	if [ -z "$$VM" ]; then \
+		printf "$(RED)  ✗ Aucune VM de test trouvée dans $(E2E_RG)$(NC)\n"; exit 1; \
+	fi; \
+	printf "$(CYAN)  → Suppression: $$VM$(NC)\n"; \
+	az vm delete -g $(E2E_RG) -n "$$VM" --yes --no-wait; \
+	printf "$(GREEN)  ✓ Suppression lancée: $$VM$(NC)\n"
+
+image-id: ## Afficher l'ID et la version de la dernière image gallery
+	@printf "$(CYAN)>> Récupération de l'ID de l'image...$(NC)\n"
+	@IMAGE_ID=$$(az sig image-version list \
+		--gallery-name $(GALLERY_NAME) \
+		--gallery-image-definition $(GALLERY_IMAGE_NAME) \
+		--resource-group $(GALLERY_RESOURCE_GROUP) \
+		--query "sort_by(@, &publishingProfile.publishedDate)[-1].id" -o tsv 2>/dev/null); \
+	if [ -z "$$IMAGE_ID" ]; then \
+		printf "$(RED)  ✗ Aucune image dans $(GALLERY_NAME)/$(GALLERY_IMAGE_NAME)$(NC)\n"; exit 1; \
+	fi; \
+	VERSION=$$(az sig image-version list \
+		--gallery-name $(GALLERY_NAME) \
+		--gallery-image-definition $(GALLERY_IMAGE_NAME) \
+		--resource-group $(GALLERY_RESOURCE_GROUP) \
+		--query "sort_by(@, &publishingProfile.publishedDate)[-1].name" -o tsv 2>/dev/null); \
+	printf "$(GREEN)  ✓ Version: $$VERSION$(NC)\n"; \
+	printf "$(CYAN)  ID: $$IMAGE_ID$(NC)\n"
+
+marketplace-info: ## Afficher les infos sur la validation Marketplace CTT
+	@bash $(CTT) info
+
+marketplace-validate: vm-ensure ## Valider conformité Azure Marketplace sur VM de test
+	@bash $(CTT) validate $(VM)
+
+marketplace-all: vm-ensure ## Exécuter tous les tests CTT (alias validate)
+	@bash $(CTT) all $(VM)
+
+marketplace-test: ## Exécuter un test CTT spécifique (TEST=nom VM=vm_name)
+	@bash $(CTT) test $(TEST) $(VM)
+
+marketplace-tests: ## Lister les tests CTT disponibles
+	@bash $(CTT) list
+
 ##@ Maintenance
 
 .PHONY: clean
