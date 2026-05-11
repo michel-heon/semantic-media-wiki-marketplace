@@ -96,7 +96,7 @@ build {
   # ------------------------------------------------------------------
   provisioner "shell" {
     script          = "${path.root}/provisioners/01-install-base.sh"
-    execute_command = "chmod +x {{.Path}}; sudo -E bash '{{.Path}}'"
+    execute_command = "chmod +x {{.Path}}; sudo {{.Vars}} bash '{{.Path}}'"
     environment_vars = [
       "SMW_LOG_FILE=/var/log/smw-install.log",
     ]
@@ -107,7 +107,7 @@ build {
   # ------------------------------------------------------------------
   provisioner "shell" {
     script          = "${path.root}/provisioners/02-install-php.sh"
-    execute_command = "chmod +x {{.Path}}; sudo -E bash '{{.Path}}'"
+    execute_command = "chmod +x {{.Path}}; sudo {{.Vars}} bash '{{.Path}}'"
     environment_vars = [
       "PHP_VERSION=${var.php_version}",
       "BLOB_STORAGE_BASE_URL=${var.blob_storage_base_url}",
@@ -120,7 +120,7 @@ build {
   # ------------------------------------------------------------------
   provisioner "shell" {
     script          = "${path.root}/provisioners/03-install-apache.sh"
-    execute_command = "chmod +x {{.Path}}; sudo -E bash '{{.Path}}'"
+    execute_command = "chmod +x {{.Path}}; sudo {{.Vars}} bash '{{.Path}}'"
     environment_vars = [
       "PHP_VERSION=${var.php_version}",
       "SMW_LOG_FILE=/var/log/smw-install.log",
@@ -132,7 +132,7 @@ build {
   # ------------------------------------------------------------------
   provisioner "shell" {
     script          = "${path.root}/provisioners/04-install-mysql.sh"
-    execute_command = "chmod +x {{.Path}}; sudo -E bash '{{.Path}}'"
+    execute_command = "chmod +x {{.Path}}; sudo {{.Vars}} bash '{{.Path}}'"
     environment_vars = [
       "MYSQL_VERSION=${var.mysql_version}",
       "BLOB_STORAGE_BASE_URL=${var.blob_storage_base_url}",
@@ -145,7 +145,7 @@ build {
   # ------------------------------------------------------------------
   provisioner "shell" {
     script          = "${path.root}/provisioners/05-install-mediawiki.sh"
-    execute_command = "chmod +x {{.Path}}; sudo -E bash '{{.Path}}'"
+    execute_command = "chmod +x {{.Path}}; sudo {{.Vars}} bash '{{.Path}}'"
     environment_vars = [
       "MEDIAWIKI_VERSION=${var.mediawiki_version}",
       "BLOB_STORAGE_BASE_URL=${var.blob_storage_base_url}",
@@ -158,7 +158,7 @@ build {
   # ------------------------------------------------------------------
   provisioner "shell" {
     script          = "${path.root}/provisioners/06-install-smw.sh"
-    execute_command = "chmod +x {{.Path}}; sudo -E bash '{{.Path}}'"
+    execute_command = "chmod +x {{.Path}}; sudo {{.Vars}} bash '{{.Path}}'"
     environment_vars = [
       "SMW_VERSION=${var.smw_version}",
       "MEDIAWIKI_VERSION=${var.mediawiki_version}",
@@ -172,7 +172,7 @@ build {
   # ------------------------------------------------------------------
   provisioner "shell" {
     script          = "${path.root}/provisioners/07-security-harden.sh"
-    execute_command = "chmod +x {{.Path}}; sudo -E bash '{{.Path}}'"
+    execute_command = "chmod +x {{.Path}}; sudo {{.Vars}} bash '{{.Path}}'"
     environment_vars = [
       "SMW_LOG_FILE=/var/log/smw-install.log",
     ]
@@ -184,7 +184,7 @@ build {
   # ------------------------------------------------------------------
   provisioner "shell" {
     script          = "${path.root}/provisioners/08-cleanup-generalize.sh"
-    execute_command = "chmod +x {{.Path}}; sudo -E bash '{{.Path}}'"
+    execute_command = "chmod +x {{.Path}}; sudo {{.Vars}} bash '{{.Path}}'"
     environment_vars = [
       "SMW_LOG_FILE=/var/log/smw-install.log",
     ]
