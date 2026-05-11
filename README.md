@@ -70,38 +70,95 @@ Offre de type **BYOL (Bring Your Own License)** — SMW et MediaWiki sont open-s
 
 ```
 .
-├── README.md                   # Ce fichier
-├── Makefile                    # Orchestrateur principal (make help)
-├── packer/                     # Définitions Packer — construction de l'image VM
-│   ├── smw.pkr.hcl
-│   └── provisioners/           # Scripts de provisionnement shell
-├── arm/                        # ARM template déployé par le client Marketplace
-├── scripts/                    # Scripts utilitaires (config, tests, release)
-├── env/                        # Fichiers de configuration (générés, ne pas éditer)
+├── README.md                        # Ce fichier
+├── Makefile                         # Orchestrateur principal (make help)
+├── .gitignore
+├── env/
+│   ├── .env.dev                     # Variables publiques (versionnées)
+│   ├── .env.dev.user.example        # Gabarit secrets (versionné)
+│   ├── .env.dev.user                # Secrets réels (NON versionné — .gitignore)
+│   └── generated/                   # Fichiers auto-générés (NON versionnés)
+│       └── config.make
+├── packer/
+│   ├── smw-vm.pkr.hcl               # Template Packer principal
+│   ├── variables.pkr.hcl            # Déclarations de variables Packer
+│   ├── generated.pkrvars.hcl        # Variables runtime (NON versionné — .gitignore)
+│   ├── provisioners/                # Scripts de provisionnement shell (01–08)
+│   │   ├── 01-install-base.sh
+│   │   ├── 02-install-php.sh
+│   │   ├── 03-install-apache.sh
+│   │   ├── 04-install-mysql.sh
+│   │   ├── 05-install-mediawiki.sh
+│   │   ├── 06-install-smw.sh
+│   │   ├── 07-security-harden.sh
+│   │   └── 08-cleanup-generalize.sh
+│   └── scripts/
+│       └── storage-provision.sh     # Gestion du cache Blob Storage
 └── docs/
-    └── adr/                    # Architecture Decision Records
+    ├── adr/                         # Architecture Decision Records
+    └── scrum/                       # Epics, User Stories, Sprint plan
 ```
-
-> Le code source (Packer, ARM, scripts) sera ajouté au fur et à mesure de l'implémentation.
 
 ---
 
 ## Démarrage Rapide (Contributeurs)
 
-```bash
-# Prérequis : Azure CLI, Packer, make
+### Prérequis
 
-# 1. Configurer l'environnement
+- [HashiCorp Packer](https://developer.hashicorp.com/packer/install) ≥ 1.11
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) ≥ 2.x
+- `make`, `wget`
+
+### Configuration initiale
+
+```bash
+# 1. Copier et remplir les secrets
+cp env/.env.dev.user.example env/.env.dev.user
+# Éditer env/.env.dev.user avec les valeurs du Service Principal Azure
+
+# 2. Générer la configuration (env/generated/config.make + packer/generated.pkrvars.hcl)
 make config
 
-# 2. Construire l'image VM
-make build
+# 3. Vérifier les variables d'environnement
+make check-env
+```
 
-# 3. Valider la certification (Azure Marketplace Certification Test Tool)
-make test
+### Build de l'image VM
 
-# 4. Publier une nouvelle version
-make release VERSION=1.2.0
+```bash
+# Initialiser les plugins Packer (une seule fois)
+make packer-init
+
+# Valider le template sans construire
+make vm-validate
+
+# Construire l'image VM dans Azure Compute Gallery
+make vm-build
+```
+
+### Gestion du cache Blob Storage
+
+```bash
+# Créer le compte de stockage et le conteneur
+make storage-create
+
+# Uploader les packages (MediaWiki, SMW, Composer)
+make storage-upload
+
+# Vérifier la présence de tous les packages
+make storage-verify
+
+# Lister les blobs présents
+make storage-list
+
+# Afficher les URLs des packages
+make storage-urls
+```
+
+### Aide
+
+```bash
+make help
 ```
 
 ---
