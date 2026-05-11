@@ -110,6 +110,7 @@ make release VERSION=1.2.0
 
 | Document | Description |
 |----------|-------------|
+| [docs/architecture/smw-azure-marketplace-architecture.md](./docs/architecture/smw-azure-marketplace-architecture.md) | Architecture cible SMW sur Azure Marketplace — VM, Packer, firstboot, certification, GTM |
 | [docs/adr/](./docs/adr/README.md) | Architecture Decision Records — toutes les décisions du projet |
 | [docs/adr/200-INFRA-azure-infrastructure-vm-offer.md](./docs/adr/200-INFRA-azure-infrastructure-vm-offer.md) | Infrastructure Azure (Compute Gallery, NSG, ARM, Data Disk) |
 | [docs/adr/300-SEC-securite-hardening-vm-certification.md](./docs/adr/300-SEC-securite-hardening-vm-certification.md) | Hardening OS et conformité certification Azure |
