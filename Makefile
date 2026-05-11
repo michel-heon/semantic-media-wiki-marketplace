@@ -65,23 +65,31 @@ azure-credential: ## Login Azure via navigateur et injecter les credentials dans
 	fi; \
 	printf "$(CYAN)>> Souscription : $${SUBSCRIPTION_ID}$(NC)\n"; \
 	printf "$(CYAN)>> Tenant       : $${TENANT_ID}$(NC)\n"; \
-	printf "$(CYAN)>> Création du Service Principal 'sp-smw-packer'...$(NC)\n"; \
-	SP_JSON=$$(az ad sp create-for-rbac \
-	    --name "sp-smw-packer" \
-	    --role "Contributor" \
-	    --scopes "/subscriptions/$${SUBSCRIPTION_ID}" \
-	    --output json 2>&1); \
-	if echo "$$SP_JSON" | grep -q '"appId"'; then \
-	    CLIENT_ID=$$(echo "$$SP_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['appId'])"); \
-	    CLIENT_SECRET=$$(echo "$$SP_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['password'])"); \
+	SP_TMPFILE=$$(mktemp /tmp/sp-smw-XXXXXX.json); \
+	EXISTING_SP=$$(az ad sp list --display-name "sp-smw-packer" --query "[0].appId" -o tsv 2>/dev/null); \
+	if [ -n "$$EXISTING_SP" ] && [ "$$EXISTING_SP" != "None" ]; then \
+	    printf "$(YELLOW)>> SP 'sp-smw-packer' existant détecté — régénération des credentials...$(NC)\n"; \
+	    az ad sp credential reset --id "$$EXISTING_SP" --only-show-errors --output json > "$$SP_TMPFILE" 2>/dev/null; \
 	else \
-	    printf "$(RED)>> Erreur création SP :$(NC)\n$$SP_JSON\n"; \
-	    printf "$(YELLOW)>> Si le SP existe déjà : az ad sp delete --id 'http://sp-smw-packer' puis relancer$(NC)\n"; \
-	    exit 1; \
+	    printf "$(CYAN)>> Création du Service Principal 'sp-smw-packer'...$(NC)\n"; \
+	    az ad sp create-for-rbac \
+	        --name "sp-smw-packer" \
+	        --role "Contributor" \
+	        --scopes "/subscriptions/$${SUBSCRIPTION_ID}" \
+	        --only-show-errors \
+	        --output json > "$$SP_TMPFILE" 2>/dev/null; \
 	fi; \
-	awk -v sub="$$SUBSCRIPTION_ID" -v ten="$$TENANT_ID" \
+	if ! grep -q '"appId"' "$$SP_TMPFILE" 2>/dev/null; then \
+	    printf "$(RED)>> Erreur SP — contenu reçu :$(NC)\n"; cat "$$SP_TMPFILE"; \
+	    rm -f "$$SP_TMPFILE"; exit 1; \
+	fi; \
+	CLIENT_ID=$$(python3 -c "import json; d=json.load(open('$$SP_TMPFILE')); print(d['appId'])"); \
+	CLIENT_SECRET=$$(python3 -c "import json; d=json.load(open('$$SP_TMPFILE')); print(d['password'])"); \
+	rm -f "$$SP_TMPFILE"; \
+	printf "$(GREEN)  CLIENT_ID     : $${CLIENT_ID}$(NC)\n"; \
+	awk -v sid="$$SUBSCRIPTION_ID" -v ten="$$TENANT_ID" \
 	    -v cli="$$CLIENT_ID" -v sec="$$CLIENT_SECRET" \
-	    '/^AZURE_SUBSCRIPTION_ID=/ { print "AZURE_SUBSCRIPTION_ID=\"" sub "\""; next } \
+	    '/^AZURE_SUBSCRIPTION_ID=/ { print "AZURE_SUBSCRIPTION_ID=\"" sid "\""; next } \
 	     /^AZURE_TENANT_ID=/        { print "AZURE_TENANT_ID=\"" ten "\""; next } \
 	     /^AZURE_CLIENT_ID=/        { print "AZURE_CLIENT_ID=\"" cli "\""; next } \
 	     /^AZURE_CLIENT_SECRET=/    { print "AZURE_CLIENT_SECRET=\"" sec "\""; next } \
