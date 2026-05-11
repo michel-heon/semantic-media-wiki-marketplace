@@ -56,6 +56,11 @@ MW_DIR="/opt/mediawiki"
 echo "[06-install-smw] Installation de SMW ${SMW_VERSION} via Composer..."
 cd "${MW_DIR}"
 
+# phpunit/phpunit (require-dev de MediaWiki) a l'advisory PKSA-z3gr-8qht-p93v.
+# Il n'est pas installé en production (--update-no-dev), mais Composer bloque
+# quand même la résolution du graphe de dépendances. On désactive ce blocage.
+sudo -u www-data composer config --no-interaction --json audit.block-insecure false
+
 # Exécution Composer en tant que www-data pour respecter les droits
 sudo -u www-data composer require \
     --no-interaction \
