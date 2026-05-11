@@ -138,3 +138,30 @@ variable "blob_storage_base_url" {
   default     = "https://stsmwmarketplace.blob.core.windows.net/devops"
   description = "URL de base du conteneur Blob (sans slash final). Vide = pas de cache, fallback direct."
 }
+
+variable "packer_sas_token" {
+  type        = string
+  default     = ""
+  description = "SAS Token pour accéder au cache Blob Storage (ADR-616). Vide = pas de cache, fallback direct."
+  sensitive   = true
+}
+
+# ---------------------------------------------------------------------------
+# Wiki — configuration applicative
+# ---------------------------------------------------------------------------
+
+variable "wiki_port" {
+  type        = string
+  default     = "443"
+  description = "Port HTTPS du wiki MediaWiki (ex: 443)"
+}
+
+# ---------------------------------------------------------------------------
+# Azure Marketplace — publication
+# ---------------------------------------------------------------------------
+
+variable "azure_publisher_id" {
+  type        = string
+  default     = ""
+  description = "Publisher ID Azure Marketplace (ADR-800). Vide pendant la phase de développement."
+}
