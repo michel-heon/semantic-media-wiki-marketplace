@@ -17,10 +17,35 @@ echo "[01-install-base] Démarrage — $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 echo "============================================================"
 
 # ---------------------------------------------------------------------------
+# 0. Désactiver unattended-upgrades et attendre la libération des verrous APT
+#    Sur les images cloud Azure, cloud-init + unattended-upgrades tournent en
+#    arrière-plan au démarrage et corrompent le cache APT si on lance apt trop tôt.
+# ---------------------------------------------------------------------------
+echo "[01-install-base] Désactivation des mises à jour automatiques (unattended-upgrades)..."
+systemctl stop unattended-upgrades 2>/dev/null || true
+systemctl disable unattended-upgrades 2>/dev/null || true
+# Attendre la libération des 3 verrous APT possibles
+echo "[01-install-base] Attente de la libération des verrous APT..."
+for _lock in /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/cache/apt/archives/lock; do
+    while fuser "${_lock}" >/dev/null 2>&1; do
+        echo "  Verrou ${_lock} occupé — attente 5s..."
+        sleep 5
+    done
+done
+echo "[01-install-base] Verrous APT libérés."
+
+# ---------------------------------------------------------------------------
 # 1. Mise à jour de l'index APT
 # ---------------------------------------------------------------------------
 echo "[01-install-base] Mise à jour des paquets APT..."
 export DEBIAN_FRONTEND=noninteractive
+# Activer universe explicitement (nécessaire sur images Azure Ubuntu 22.04
+# où le format deb822 peut omettre universe/multiverse par défaut)
+if grep -qE "^Types:" /etc/apt/sources.list.d/ubuntu.sources 2>/dev/null; then
+    sed -i 's/^Components: main restricted$/Components: main restricted universe multiverse/' \
+        /etc/apt/sources.list.d/ubuntu.sources
+fi
+add-apt-repository -y universe 2>/dev/null || true
 apt-get update -y
 
 # ---------------------------------------------------------------------------
