@@ -52,6 +52,43 @@ setup: ## Installer les prérequis (packer, az cli)
 	@command -v wget >/dev/null 2>&1 || { printf "$(RED)ERREUR: wget non installé$(NC)\n"; exit 1; }
 	@printf "$(GREEN)>> Prérequis OK$(NC)\n"
 
+.PHONY: azure-credential
+azure-credential: ## Login Azure via navigateur et injecter les credentials dans env/.env.dev.user
+	@printf "$(BOLD)$(CYAN)>> Connexion Azure via navigateur...$(NC)\n"
+	@command -v az >/dev/null 2>&1 || { printf "$(RED)ERREUR: az cli non installé. Voir https://learn.microsoft.com/cli/azure/install-azure-cli$(NC)\n"; exit 1; }
+	@az login --output none
+	@printf "$(CYAN)>> Extraction de la souscription active...$(NC)\n"
+	@SUBSCRIPTION_ID=$$(az account show --query id -o tsv 2>/dev/null); \
+	TENANT_ID=$$(az account show --query tenantId -o tsv 2>/dev/null); \
+	if [ -z "$$SUBSCRIPTION_ID" ]; then \
+	    printf "$(RED)>> Impossible d'obtenir la souscription. Vérifiez le login Azure.$(NC)\n"; exit 1; \
+	fi; \
+	printf "$(CYAN)>> Souscription : $${SUBSCRIPTION_ID}$(NC)\n"; \
+	printf "$(CYAN)>> Tenant       : $${TENANT_ID}$(NC)\n"; \
+	printf "$(CYAN)>> Création du Service Principal 'sp-smw-packer'...$(NC)\n"; \
+	SP_JSON=$$(az ad sp create-for-rbac \
+	    --name "sp-smw-packer" \
+	    --role "Contributor" \
+	    --scopes "/subscriptions/$${SUBSCRIPTION_ID}" \
+	    --output json 2>&1); \
+	if echo "$$SP_JSON" | grep -q '"appId"'; then \
+	    CLIENT_ID=$$(echo "$$SP_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['appId'])"); \
+	    CLIENT_SECRET=$$(echo "$$SP_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['password'])"); \
+	else \
+	    printf "$(RED)>> Erreur création SP :$(NC)\n$$SP_JSON\n"; \
+	    printf "$(YELLOW)>> Si le SP existe déjà : az ad sp delete --id 'http://sp-smw-packer' puis relancer$(NC)\n"; \
+	    exit 1; \
+	fi; \
+	awk -v sub="$$SUBSCRIPTION_ID" -v ten="$$TENANT_ID" \
+	    -v cli="$$CLIENT_ID" -v sec="$$CLIENT_SECRET" \
+	    '/^AZURE_SUBSCRIPTION_ID=/ { print "AZURE_SUBSCRIPTION_ID=\"" sub "\""; next } \
+	     /^AZURE_TENANT_ID=/        { print "AZURE_TENANT_ID=\"" ten "\""; next } \
+	     /^AZURE_CLIENT_ID=/        { print "AZURE_CLIENT_ID=\"" cli "\""; next } \
+	     /^AZURE_CLIENT_SECRET=/    { print "AZURE_CLIENT_SECRET=\"" sec "\""; next } \
+	     { print }' env/.env.dev.user.example > "$(ENV_USER)"; \
+	printf "$(GREEN)>> Credentials injectés dans $(ENV_USER)$(NC)\n"; \
+	printf "$(GREEN)>> Lancez maintenant : make config && make vm-build$(NC)\n"
+
 .PHONY: check-env
 check-env: ## Vérifier les variables d'environnement requises avant build
 	@printf "$(CYAN)>> Vérification des variables d'environnement...$(NC)\n"
