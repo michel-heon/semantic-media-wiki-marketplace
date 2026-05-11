@@ -227,7 +227,7 @@ vm-ensure: ## Créer la VM de test SMW si elle n'existe pas (depuis dernière im
 			--resource-group $(E2E_RG) \
 			--name "$$VM_NAME" \
 			--image "$$IMAGE_ID" \
-			--size Standard_B2s \
+			--size $(VM_SIZE) \
 			--admin-username azureuser \
 			--generate-ssh-keys \
 			--public-ip-sku Standard \
