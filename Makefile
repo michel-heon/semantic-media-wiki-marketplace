@@ -177,6 +177,7 @@ E2E_RG ?= rg-smw-marketplace-e2e
 CTT     := packer/scripts/marketplace-ctt.sh
 
 .PHONY: vm-ensure vm-stop vm-start vm-delete image-id
+.PHONY: vm-dns-assign vm-dns-assign-reboot
 .PHONY: marketplace-info marketplace-validate marketplace-all marketplace-test marketplace-tests
 
 vm-ensure: ## Créer la VM de test SMW si elle n'existe pas (depuis dernière image gallery)
@@ -199,6 +200,14 @@ image-id: ## Afficher l'ID et la version de la dernière image gallery
 	$(call log_action,Récupération de l'ID image gallery...)
 	@bash packer/scripts/vm-manage.sh id
 
+vm-dns-assign: ## Assigner un label DNS à l'IP publique de la VM de test
+	$(call log_action,Attribution d'un label DNS à la VM de test...)
+	@E2E_RG=$(E2E_RG) bash packer/scripts/vm-manage.sh dns-assign
+
+vm-dns-assign-reboot: ## Assigner le DNS puis rebooter la VM (auto-config via IMDS au démarrage)
+	$(call log_action,Attribution DNS + redémarrage de la VM de test...)
+	@E2E_RG=$(E2E_RG) bash packer/scripts/vm-manage.sh dns-assign-reboot
+
 marketplace-info: ## Afficher les infos sur la validation Marketplace CTT
 	@bash $(CTT) info
 
@@ -213,6 +222,14 @@ marketplace-test: ## Exécuter un test CTT spécifique (TEST=nom VM=vm_name)
 
 marketplace-tests: ## Lister les tests CTT disponibles
 	@bash $(CTT) list
+
+##@ Tests Frontend
+
+.PHONY: frontend-test-login-ui
+
+frontend-test-login-ui: ## Exécuter les tests UI de la page login MediaWiki (curl + validation)
+	$(call log_action,Test UI de la page de login SMW...)
+	@E2E_RG=$(E2E_RG) bash packer/scripts/frontend-test.sh login-ui
 
 ##@ Maintenance
 

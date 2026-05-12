@@ -5,13 +5,15 @@
 # ADR-602 : Logique extraite du Makefile (règle des 3 lignes)
 #
 # Sous-commandes :
-#   ensure   Créer la VM de test si absente (depuis la dernière image gallery)
-#   stop     Deallocater la VM
-#   start    Démarrer la VM
-#   delete   Supprimer la VM
-#   id       Afficher l'ID et la version de la dernière image gallery
+#   ensure           Créer la VM de test si absente (depuis la dernière image gallery)
+#   stop             Deallocater la VM
+#   start            Démarrer la VM
+#   delete           Supprimer la VM
+#   id               Afficher l'ID et la version de la dernière image gallery
+#   dns-assign       Assigner un label DNS à l'IP publique de la VM
+#   dns-assign-reboot Assigner le DNS puis redémarrer la VM
 # =============================================================================
-# Usage: bash packer/scripts/vm-manage.sh <ensure|stop|start|delete|id>
+# Usage: bash packer/scripts/vm-manage.sh <ensure|stop|start|delete|id|dns-assign|dns-assign-reboot>
 # Variables d'environnement optionnelles (surchargeables) :
 #   E2E_RG, VM_SIZE, GALLERY_NAME, GALLERY_IMAGE_NAME, GALLERY_RESOURCE_GROUP
 # =============================================================================
@@ -127,8 +129,43 @@ case "$cmd" in
         printf "${CYAN}  ID : ${IMAGE_ID}${NC}\n"
         ;;
 
+    dns-assign)
+        VM=$(find_test_vm)
+        [ -z "$VM" ] && { printf "${RED}  ✗ Aucune VM dans ${E2E_RG}${NC}\n"; exit 1; }
+        printf "${CYAN}  → Attribution label DNS à la VM ${VM}...${NC}\n"
+        NIC_ID=$(az vm show -g "$E2E_RG" -n "$VM" \
+            --query "networkProfile.networkInterfaces[0].id" -o tsv)
+        PIP_ID=$(az network nic show --ids "$NIC_ID" \
+            --query "ipConfigurations[0].publicIPAddress.id" -o tsv 2>/dev/null || true)
+        if [ -z "$PIP_ID" ]; then
+            printf "${RED}  ✗ Aucune IP publique associée à ${VM}${NC}\n"
+            exit 1
+        fi
+        PIP_NAME=$(basename "$PIP_ID")
+        PIP_RG=$(echo "$PIP_ID" | awk -F'/' '{print $5}')
+        DNS_LABEL="smw-test-$(date +%Y%m%d)"
+        az network public-ip update \
+            -g "$PIP_RG" \
+            -n "$PIP_NAME" \
+            --dns-name "$DNS_LABEL" \
+            --output none
+        FQDN=$(az network public-ip show -g "$PIP_RG" -n "$PIP_NAME" \
+            --query "dnsSettings.fqdn" -o tsv)
+        printf "${GREEN}  ✓ FQDN: ${FQDN}${NC}\n"
+        printf "${CYAN}  ℹ La VM détectera le FQDN via IMDS au prochain démarrage${NC}\n"
+        ;;
+
+    dns-assign-reboot)
+        bash "$0" dns-assign
+        VM=$(find_test_vm)
+        [ -z "$VM" ] && { printf "${RED}  ✗ Aucune VM dans ${E2E_RG}${NC}\n"; exit 1; }
+        printf "${CYAN}  → Redémarrage de la VM ${VM}...${NC}\n"
+        az vm restart -g "$E2E_RG" -n "$VM" --no-wait
+        printf "${GREEN}  ✓ Redémarrage lancé — la VM détectera le FQDN via IMDS au démarrage${NC}\n"
+        ;;
+
     *)
-        printf "${RED}Usage: $0 <ensure|stop|start|delete|id>${NC}\n"
+        printf "${RED}Usage: $0 <ensure|stop|start|delete|id|dns-assign|dns-assign-reboot>${NC}\n"
         exit 1
         ;;
 esac
