@@ -176,7 +176,7 @@ storage-urls: ## Afficher les URLs des packages dans le blob
 E2E_RG ?= rg-smw-marketplace-e2e
 CTT     := packer/scripts/marketplace-ctt.sh
 
-.PHONY: vm-ensure vm-stop vm-start vm-delete image-id
+.PHONY: vm-ensure vm-stop vm-start vm-delete vm-status image-id
 .PHONY: vm-dns-assign vm-dns-assign-reboot
 .PHONY: marketplace-info marketplace-validate marketplace-all marketplace-test marketplace-tests
 
@@ -195,6 +195,10 @@ vm-start: ## Démarrer la VM de test SMW
 vm-delete: ## Supprimer la VM de test SMW
 	$(call log_action,Suppression de la VM de test...)
 	@E2E_RG=$(E2E_RG) bash packer/scripts/vm-manage.sh delete
+
+vm-status: ## Afficher l'état, l'IP, le DNS et l'URL de la VM de test
+	$(call log_action,Statut de la VM de test...)
+	@E2E_RG=$(E2E_RG) bash packer/scripts/vm-manage.sh status
 
 image-id: ## Afficher l'ID et la version de la dernière image gallery
 	$(call log_action,Récupération de l'ID image gallery...)

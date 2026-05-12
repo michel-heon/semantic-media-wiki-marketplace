@@ -12,8 +12,9 @@
 #   id               Afficher l'ID et la version de la dernière image gallery
 #   dns-assign       Assigner un label DNS à l'IP publique de la VM
 #   dns-assign-reboot Assigner le DNS puis redémarrer la VM
+#   status           Afficher l'état, l'IP, le DNS et l'URL de la VM de test
 # =============================================================================
-# Usage: bash packer/scripts/vm-manage.sh <ensure|stop|start|delete|id|dns-assign|dns-assign-reboot>
+# Usage: bash packer/scripts/vm-manage.sh <ensure|stop|start|delete|id|dns-assign|dns-assign-reboot|status>
 # Variables d'environnement optionnelles (surchargeables) :
 #   E2E_RG, VM_SIZE, GALLERY_NAME, GALLERY_IMAGE_NAME, GALLERY_RESOURCE_GROUP
 # =============================================================================
@@ -164,8 +165,46 @@ case "$cmd" in
         printf "${GREEN}  ✓ Redémarrage lancé — la VM détectera le FQDN via IMDS au démarrage${NC}\n"
         ;;
 
+    status)
+        VM=$(find_test_vm)
+        if [ -z "$VM" ]; then
+            printf "${YELLOW}  ⚠ Aucune VM de test dans ${E2E_RG}${NC}\n"
+            exit 0
+        fi
+        STATE=$(az vm show -g "$E2E_RG" -n "$VM" -d --query powerState -o tsv 2>/dev/null || echo "inconnu")
+        NIC_ID=$(az vm show -g "$E2E_RG" -n "$VM" \
+            --query "networkProfile.networkInterfaces[0].id" -o tsv)
+        PIP_ID=$(az network nic show --ids "$NIC_ID" \
+            --query "ipConfigurations[0].publicIPAddress.id" -o tsv 2>/dev/null || true)
+        if [ -n "$PIP_ID" ]; then
+            PIP_JSON=$(az network public-ip show --ids "$PIP_ID" \
+                --query "{ip:ipAddress,fqdn:dnsSettings.fqdn}" -o json 2>/dev/null || echo '{}')
+            IP=$(printf '%s' "$PIP_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('ip') or '')")
+            FQDN=$(printf '%s' "$PIP_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('fqdn') or '')")
+        else
+            IP=""; FQDN=""
+        fi
+        printf "${CYAN}  VM     : ${VM}${NC}\n"
+        printf "${CYAN}  État   : ${STATE}${NC}\n"
+        if [ -n "$IP" ]; then
+            printf "${GREEN}  IP     : ${IP}${NC}\n"
+        else
+            printf "${YELLOW}  IP     : (aucune IP publique)${NC}\n"
+        fi
+        if [ -n "$FQDN" ]; then
+            printf "${GREEN}  DNS    : ${FQDN}${NC}\n"
+            printf "${GREEN}  URL    : http://${FQDN}/index.php${NC}\n"
+        elif [ -n "$IP" ]; then
+            printf "${YELLOW}  DNS    : (aucun label DNS assigné)${NC}\n"
+            printf "${GREEN}  URL    : http://${IP}/index.php${NC}\n"
+        else
+            printf "${YELLOW}  DNS    : (aucun label DNS assigné)${NC}\n"
+            printf "${YELLOW}  URL    : (IP publique introuvable)${NC}\n"
+        fi
+        ;;
+
     *)
-        printf "${RED}Usage: $0 <ensure|stop|start|delete|id|dns-assign|dns-assign-reboot>${NC}\n"
+        printf "${RED}Usage: $0 <ensure|stop|start|delete|id|dns-assign|dns-assign-reboot|status>${NC}\n"
         exit 1
         ;;
 esac
