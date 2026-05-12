@@ -142,6 +142,16 @@ vm-build: check-env ## Construire l'image VM SMW (lance packer build)
 	    "$(PACKER_DIR)/"
 	$(call log_success,Image VM construite avec succès)
 
+.PHONY: vm-build-force
+vm-build-force: check-env ## Reconstruire l'image VM SMW (force — écrase les artefacts existants)
+	$(call log_action,Construction forcée de l'image VM SMW — BUILD_DATE=$(BUILD_DATE))
+	packer init "$(PACKER_DIR)/" && packer build \
+	    -force \
+	    -var-file="$(PKRVARS)" \
+	    -var "build_date=$(BUILD_DATE)" \
+	    "$(PACKER_DIR)/"
+	$(call log_success,Image VM reconstruite avec succès)
+
 ##@ Blob Storage — Cache de packages
 
 .PHONY: storage-create

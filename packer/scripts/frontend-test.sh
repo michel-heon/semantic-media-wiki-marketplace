@@ -63,6 +63,7 @@ case "$cmd" in
         HTTP_STATUS=$(curl -s -o /tmp/smw-login-test.html -w "%{http_code}" \
             --max-time 15 \
             --connect-timeout 10 \
+            -L -k \
             "${LOGIN_URL}" || echo "000")
 
         if [ "$HTTP_STATUS" = "200" ]; then

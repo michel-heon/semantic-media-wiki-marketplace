@@ -90,6 +90,13 @@ cat > /etc/apache2/sites-available/smw.conf <<'VHOST'
         Options FollowSymLinks
         AllowOverride All
         Require all granted
+
+        # MediaWiki short URLs — /wiki/$1 → index.php (ADR-613)
+        RewriteEngine On
+        RewriteRule ^/?wiki(/.*)?$ /index.php [L]
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteCond %{REQUEST_FILENAME} !-d
+        RewriteRule . /index.php [L]
     </Directory>
 
     # PHP-FPM via socket Unix

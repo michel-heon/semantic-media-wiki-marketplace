@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# packer/provisioners/08-cleanup-generalize.sh
+# packer/provisioners/09-cleanup-generalize.sh
 # Nettoyage et généralisation de la VM avant capture (waagent deprovision)
 # ADR-613 — Architecture et Validation des Provisioners Packer
 # ADR-617 — Packer : outil de construction d'images VM Azure Marketplace
@@ -16,13 +16,13 @@ LOG_FILE="${SMW_LOG_FILE:-/var/log/smw-install.log}"
 exec > >(tee -a "${LOG_FILE}") 2>&1
 
 echo "============================================================"
-echo "[08-cleanup-generalize] Démarrage — $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+echo "[09-cleanup-generalize] Démarrage — $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 echo "============================================================"
 
 # ---------------------------------------------------------------------------
 # 1. Nettoyage des credentials et informations sensibles temporaires
 # ---------------------------------------------------------------------------
-echo "[08-cleanup-generalize] Nettoyage des credentials temporaires..."
+echo "[09-cleanup-generalize] Nettoyage des credentials temporaires..."
 
 # Variables d'environnement potentiellement sensibles — purge du fichier /etc/environment
 # (les variables Packer sont dans l'environnement du processus, pas dans /etc/environment,
@@ -35,7 +35,7 @@ fi
 # ---------------------------------------------------------------------------
 # 2. Nettoyage des logs système et logs d'installation
 # ---------------------------------------------------------------------------
-echo "[08-cleanup-generalize] Nettoyage des logs..."
+echo "[09-cleanup-generalize] Nettoyage des logs..."
 
 # Vider les logs APT
 find /var/log/apt -type f -name "*.log" -exec truncate -s 0 {} \; 2>/dev/null || true
@@ -53,7 +53,7 @@ journalctl --rotate --vacuum-time=1s 2>/dev/null || true
 # ---------------------------------------------------------------------------
 # 3. Nettoyage du cache APT et des packages inutiles
 # ---------------------------------------------------------------------------
-echo "[08-cleanup-generalize] Nettoyage APT..."
+echo "[09-cleanup-generalize] Nettoyage APT..."
 apt-get autoremove -y
 apt-get clean
 rm -rf /var/lib/apt/lists/*
@@ -61,7 +61,7 @@ rm -rf /var/lib/apt/lists/*
 # ---------------------------------------------------------------------------
 # 4. Nettoyage des historiques bash et SSH known_hosts
 # ---------------------------------------------------------------------------
-echo "[08-cleanup-generalize] Nettoyage des historiques utilisateurs..."
+echo "[09-cleanup-generalize] Nettoyage des historiques utilisateurs..."
 
 # root
 truncate -s 0 /root/.bash_history 2>/dev/null || true
@@ -78,7 +78,7 @@ done
 # ---------------------------------------------------------------------------
 # 5. Nettoyage des fichiers temporaires de build
 # ---------------------------------------------------------------------------
-echo "[08-cleanup-generalize] Nettoyage des fichiers temporaires..."
+echo "[09-cleanup-generalize] Nettoyage des fichiers temporaires..."
 rm -rf /tmp/* 2>/dev/null || true
 rm -rf /var/tmp/* 2>/dev/null || true
 
@@ -89,7 +89,7 @@ find /tmp -maxdepth 1 -name "*.zip" -delete 2>/dev/null || true
 # ---------------------------------------------------------------------------
 # 6. Synchronisation des disques avant déprovision
 # ---------------------------------------------------------------------------
-echo "[08-cleanup-generalize] Synchronisation disque..."
+echo "[09-cleanup-generalize] Synchronisation disque..."
 sync
 
 # ---------------------------------------------------------------------------
@@ -97,5 +97,5 @@ sync
 #    ⚠️ DOIT être la DERNIÈRE commande exécutée (ADR-617)
 #    ⚠️ Aucune commande après cette ligne ne sera exécutée
 # ---------------------------------------------------------------------------
-echo "[08-cleanup-generalize] Généralisation waagent — DERNIÈRE ÉTAPE"
+echo "[09-cleanup-generalize] Généralisation waagent — DERNIÈRE ÉTAPE"
 /usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync

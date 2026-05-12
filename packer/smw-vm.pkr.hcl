@@ -179,11 +179,23 @@ build {
   }
 
   # ------------------------------------------------------------------
-  # 08 — Nettoyage et généralisation Azure (obligatoire Marketplace)
+  # 08 — Déploiement du mécanisme de premier démarrage (ADR-613, ADR-800)
+  #       smw-firstboot.service (systemd oneshot) + smw-firstboot.sh
+  # ------------------------------------------------------------------
+  provisioner "shell" {
+    script          = "${path.root}/provisioners/08-firstboot-setup.sh"
+    execute_command = "chmod +x {{.Path}}; sudo {{.Vars}} bash '{{.Path}}'"
+    environment_vars = [
+      "SMW_LOG_FILE=/var/log/smw-install.log",
+    ]
+  }
+
+  # ------------------------------------------------------------------
+  # 09 — Nettoyage et généralisation Azure (obligatoire Marketplace)
   # DOIT être le dernier provisioner — waagent deprovision+user
   # ------------------------------------------------------------------
   provisioner "shell" {
-    script          = "${path.root}/provisioners/08-cleanup-generalize.sh"
+    script          = "${path.root}/provisioners/09-cleanup-generalize.sh"
     execute_command = "chmod +x {{.Path}}; sudo {{.Vars}} bash '{{.Path}}'"
     environment_vars = [
       "SMW_LOG_FILE=/var/log/smw-install.log",
