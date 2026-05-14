@@ -51,6 +51,16 @@ download_package() {
 MW_DIR="/opt/mediawiki"
 
 # ---------------------------------------------------------------------------
+# 0. Préparation du répertoire de cache Composer
+# ---------------------------------------------------------------------------
+# www-data a besoin d'un cache Composer accessible en écriture. Si le répertoire
+# n'existe pas ou n'est pas accessible, git clone (fallback dist) échoue fatalement.
+install -d -m 755 -o www-data -g www-data /var/www/.cache/composer
+install -d -m 755 -o www-data -g www-data /var/www/.cache/composer/repo
+install -d -m 755 -o www-data -g www-data /var/www/.cache/composer/vcs
+install -d -m 755 -o www-data -g www-data /var/www/.cache/composer/files
+
+# ---------------------------------------------------------------------------
 # 1. Installation de Semantic MediaWiki via Composer
 # ---------------------------------------------------------------------------
 echo "[06-install-smw] Installation de SMW ${SMW_VERSION} via Composer..."

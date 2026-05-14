@@ -79,6 +79,11 @@ case "$cmd" in
                 exit 1
             fi
             VM_NAME="test-smw-${BUILD_DATE}"
+            printf "${CYAN}  → Création RG si absent : ${E2E_RG}${NC}\n"
+            az group create \
+                --name "$E2E_RG" \
+                --location "${AZURE_LOCATION:-canadacentral}" \
+                --output none
             printf "${CYAN}  → Création VM : ${VM_NAME} (${VM_SIZE})${NC}\n"
             az vm create \
                 --resource-group "$E2E_RG" \

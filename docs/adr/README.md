@@ -111,7 +111,8 @@ git commit -m "docs(adr): ADR-201 [INFRA] Nouvelle décision"
 
 | ADR | Titre | Statut | Date | Domaine |
 |-----|-------|--------|------|---------|
-| *(aucun ADR pour l'instant)* | | | | |
+| [700](./700-TEST-plan-tests-integration.md) | Plan de Tests d'Intégration — SMW Marketplace | ✅ Accepté | 2026-05-12 | Test |
+
 
 ---
 
@@ -121,7 +122,6 @@ git commit -m "docs(adr): ADR-201 [INFRA] Nouvelle décision"
 |-----|-------|--------|------|---------|
 | [800](./800-BIZ-publication-azure-marketplace-vm-offer.md) | Publication Offre VM sur Azure Marketplace — Conformité et Bonnes Pratiques Microsoft | ✅ Accepté | 2026-02-21 | BIZ |
 | [801](./801-BIZ-strategie-documentation-marketplace.md) | Stratégie de Documentation — Offre Azure Marketplace (utilisateur final) | ✅ Accepté | 2026-03-05 | BIZ |
-| [802](./802-BIZ-sources-officielles-azure-marketplace.md) | Sources Officielles Azure Marketplace — Référentiel Anti-Hallucination IA | ✅ Accepté | 2026-05-14 | BIZ |
 
 ---
 
@@ -129,12 +129,12 @@ git commit -m "docs(adr): ADR-201 [INFRA] Nouvelle décision"
 
 | Indicateur | Valeur |
 |-----------|--------|
-| **Total ADRs** | 22 |
-| **Acceptés** | 22 |
+| **Total ADRs** | 21 |
+| **Acceptés** | 21 |
 | **Dépréciés** | 0 |
 | **Proposés** | 0 |
 | **Brouillons** | 0 |
-| **Par Domaine** | META: 3, INFRA: 1, SEC: 2, DEVOPS: 13, BIZ: 3 |
+| **Par Domaine** | META: 3, INFRA: 1, SEC: 2, DEVOPS: 13, BIZ: 2 |
 
 ---
 
@@ -150,7 +150,7 @@ git commit -m "docs(adr): ADR-201 [INFRA] Nouvelle décision"
 | `API` | 500-599 | API MediaWiki, intégrations | 500 |
 | `DEVOPS` | 600-699 | CI/CD, scripts provisioning | 618 |
 | `TEST` | 700-799 | Validation Marketplace, smoke tests | 701 |
-| `BIZ` | 800-899 | Offre Marketplace, licensing | 803 |
+| `BIZ` | 800-899 | Offre Marketplace, licensing | 802 |
 
 ---
 

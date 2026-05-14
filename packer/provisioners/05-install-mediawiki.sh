@@ -80,7 +80,11 @@ rm -rf "${TMP_EXTRACT}" "${ARCHIVE_TMP}"
 # ---------------------------------------------------------------------------
 echo "[05-install-mediawiki] Configuration des droits..."
 chown -R www-data:www-data /opt/mediawiki
-chmod -R 750 /opt/mediawiki
+# Répertoires traversables (755) — obligatoire pour que azureuser puisse vérifier
+# l'image sans être www-data ; fichiers protégés (640, lisibles seulement par
+# www-data et le groupe). ADR-613 : ownership www-data:www-data maintenu.
+find /opt/mediawiki -type d -exec chmod 755 {} +
+find /opt/mediawiki -type f -exec chmod 640 {} +
 
 # Répertoire uploads sur /data/uploads (ADR-613)
 mkdir -p /data/uploads

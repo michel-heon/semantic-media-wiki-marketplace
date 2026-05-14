@@ -282,6 +282,24 @@ vm-dev-status: ## Afficher l'état, l'IP et la commande SSH de la VM dev
 	$(call log_action,Statut de la VM dev...)
 	@bash packer/scripts/vm-dev-manage.sh status
 
+##@ Tests d'Intégration (ADR-700)
+
+.PHONY: integration-test-static
+integration-test-static: ## Phase 1 — Tests statiques : HCL2, ARM JSON, scan secrets, permissions (aucun accès Azure)
+	@$(MAKE) -C tests/integration static --no-print-directory
+
+.PHONY: integration-test-image
+integration-test-image: ## Phase 2 — Tests image gallery via SSH (E2E_RG et VM_NAME requis)
+	@$(MAKE) -C tests/integration image --no-print-directory
+
+.PHONY: integration-test-e2e
+integration-test-e2e: ## Phase 3 — Tests E2E post-déploiement ARM (firstboot déclenché)
+	@$(MAKE) -C tests/integration e2e --no-print-directory
+
+.PHONY: integration-test
+integration-test: ## Suite complète : Phase 1 (static) + Phase 2 (image) + Phase 3 (e2e)
+	@$(MAKE) -C tests/integration all --no-print-directory
+
 ##@ Maintenance
 
 .PHONY: clean
