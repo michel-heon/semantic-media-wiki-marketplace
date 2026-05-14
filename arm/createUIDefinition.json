@@ -1,0 +1,240 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+  "handler": "Microsoft.Azure.CreateUIDef",
+  "version": "0.1.2-preview",
+  "parameters": {
+    "config": {
+      "isWizard": true,
+      "basics": {
+        "description": "## SMW Marketplace\n\nDéployez **MediaWiki + SemanticMediaWiki** préconfigurés sur Azure.\n\nVotre wiki sera opérationnel et accessible en HTTPS dès le premier démarrage.\n\n[Documentation](https://github.com/michel-heon/semantic-media-wiki-marketplace)",
+        "subscription": {},
+        "resourceGroup": {},
+        "location": {
+          "visible": true,
+          "resourceTypes": ["Microsoft.Compute/virtualMachines"]
+        }
+      }
+    },
+    "basics": [
+      {
+        "name": "vmName",
+        "type": "Microsoft.Common.TextBox",
+        "label": "Nom de la VM",
+        "defaultValue": "smw-wiki",
+        "constraints": {
+          "required": true,
+          "validations": [
+            {
+              "regex": "^[a-zA-Z][a-zA-Z0-9-]{1,13}$",
+              "message": "1–15 caractères alphanumériques ou tirets, doit commencer par une lettre."
+            }
+          ]
+        }
+      },
+      {
+        "name": "adminUsername",
+        "type": "Microsoft.Compute.UserNameTextBox",
+        "label": "Nom d'utilisateur administrateur",
+        "osPlatform": "Linux",
+        "constraints": { "required": true }
+      },
+      {
+        "name": "adminPublicKey",
+        "type": "Microsoft.Compute.CredentialsCombo",
+        "label": {
+          "authenticationType": "Type d'authentification",
+          "sshPublicKey": "Clé publique SSH"
+        },
+        "constraints": {
+          "required": true,
+          "customPasswordRegex": "^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).{12,}$",
+          "customValidationMessage": "Non utilisé (SSH uniquement)"
+        },
+        "options": {
+          "hideConfirmation": false,
+          "hidePassword": true
+        },
+        "osPlatform": "Linux"
+      }
+    ],
+    "steps": [
+      {
+        "name": "wikiSettings",
+        "label": "Configuration Wiki",
+        "elements": [
+          {
+            "name": "wikiName",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Nom du wiki",
+            "defaultValue": "Mon Wiki SMW",
+            "toolTip": "Nom affiché dans le titre de votre wiki MediaWiki.",
+            "constraints": {
+              "required": true,
+              "validations": [
+                {
+                  "regex": "^.{2,64}$",
+                  "message": "Le nom du wiki doit faire entre 2 et 64 caractères."
+                }
+              ]
+            }
+          },
+          {
+            "name": "wikiHostName",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Nom de domaine ou IP publique",
+            "toolTip": "Nom de domaine complet (ex: wiki.example.com) ou adresse IP publique. Utilisé pour le certificat TLS et les URLs du wiki.",
+            "placeholder": "wiki.example.com",
+            "constraints": {
+              "required": true,
+              "validations": [
+                {
+                  "regex": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,}$|^(\\d{1,3}\\.){3}\\d{1,3}$",
+                  "message": "Entrez un FQDN valide (ex: wiki.example.com) ou une adresse IPv4."
+                }
+              ]
+            }
+          },
+          {
+            "name": "wikiAdminUser",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Administrateur wiki",
+            "defaultValue": "WikiAdmin",
+            "toolTip": "Nom du compte administrateur MediaWiki (différent de l'admin SSH).",
+            "constraints": {
+              "required": true,
+              "validations": [
+                {
+                  "regex": "^[a-zA-Z][a-zA-Z0-9_-]{2,31}$",
+                  "message": "3–32 caractères, commence par une lettre, lettres/chiffres/tiret/underscore uniquement."
+                }
+              ]
+            }
+          },
+          {
+            "name": "wikiAdminEmail",
+            "type": "Microsoft.Common.TextBox",
+            "label": "E-mail administrateur wiki",
+            "toolTip": "Adresse e-mail associée au compte administrateur MediaWiki.",
+            "placeholder": "admin@example.com",
+            "constraints": {
+              "required": true,
+              "validations": [
+                {
+                  "regex": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+                  "message": "Entrez une adresse e-mail valide."
+                }
+              ]
+            }
+          },
+          {
+            "name": "wikiAdminPassword",
+            "type": "Microsoft.Common.PasswordBox",
+            "label": {
+              "password": "Mot de passe administrateur wiki",
+              "confirmPassword": "Confirmer le mot de passe"
+            },
+            "toolTip": "Mot de passe du compte administrateur MediaWiki. Minimum 12 caractères avec majuscule, minuscule et chiffre.",
+            "constraints": {
+              "required": true,
+              "regex": "^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).{12,}$",
+              "validationMessage": "Minimum 12 caractères avec au moins une majuscule, une minuscule et un chiffre."
+            },
+            "options": {
+              "hideConfirmation": false
+            }
+          },
+          {
+            "name": "databasePassword",
+            "type": "Microsoft.Common.PasswordBox",
+            "label": {
+              "password": "Mot de passe base de données (MySQL)",
+              "confirmPassword": "Confirmer le mot de passe"
+            },
+            "toolTip": "Mot de passe MySQL pour l'utilisateur 'mediawiki'. Minimum 12 caractères avec majuscule, minuscule et chiffre.",
+            "constraints": {
+              "required": true,
+              "regex": "^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).{12,}$",
+              "validationMessage": "Minimum 12 caractères avec au moins une majuscule, une minuscule et un chiffre."
+            },
+            "options": {
+              "hideConfirmation": false
+            }
+          }
+        ]
+      },
+      {
+        "name": "vmSettings",
+        "label": "Configuration VM",
+        "elements": [
+          {
+            "name": "vmSize",
+            "type": "Microsoft.Compute.SizeSelector",
+            "label": "Taille de la VM",
+            "toolTip": "Taille Azure de la machine virtuelle. Standard_D2s_v3 est recommandé pour les wikis de petite à moyenne taille.",
+            "recommendedSizes": [
+              "Standard_D2s_v3",
+              "Standard_D4s_v3"
+            ],
+            "constraints": {
+              "allowedSizes": [
+                "Standard_D2s_v3",
+                "Standard_D4s_v3",
+                "Standard_D8s_v3",
+                "Standard_B2ms",
+                "Standard_B4ms"
+              ]
+            },
+            "osPlatform": "Linux",
+            "imageReference": {
+              "publisher": "Canonical",
+              "offer": "0001-com-ubuntu-server-jammy",
+              "sku": "22_04-lts-gen2"
+            },
+            "count": 1
+          },
+          {
+            "name": "dataDiskSizeGB",
+            "type": "Microsoft.Common.Slider",
+            "label": "Taille du disque de données (Go)",
+            "toolTip": "Espace de stockage dédié au contenu wiki (pages, fichiers, images). 32 Go recommandé pour démarrer.",
+            "min": 16,
+            "max": 1024,
+            "defaultValue": 32,
+            "showStepMarkers": false
+          },
+          {
+            "name": "sshSourceIP",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Adresse IP source SSH autorisée",
+            "defaultValue": "*",
+            "toolTip": "Restreignez l'accès SSH (port 22) à votre adresse IP. Entrez '*' pour autoriser toutes les adresses (déconseillé en production).",
+            "constraints": {
+              "required": true,
+              "validations": [
+                {
+                  "regex": "^\\*$|^(\\d{1,3}\\.){3}\\d{1,3}(/\\d{1,2})?$",
+                  "message": "Entrez '*', une adresse IPv4 (ex: 1.2.3.4) ou un CIDR (ex: 1.2.3.0/24)."
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "location": "[location()]",
+      "vmName": "[basics('vmName')]",
+      "adminUsername": "[basics('adminUsername')]",
+      "adminPublicKey": "[basics('adminPublicKey').sshPublicKey]",
+      "wikiName": "[steps('wikiSettings').wikiName]",
+      "wikiHostName": "[steps('wikiSettings').wikiHostName]",
+      "wikiAdminUser": "[steps('wikiSettings').wikiAdminUser]",
+      "wikiAdminEmail": "[steps('wikiSettings').wikiAdminEmail]",
+      "wikiAdminPassword": "[steps('wikiSettings').wikiAdminPassword]",
+      "databasePassword": "[steps('wikiSettings').databasePassword]",
+      "vmSize": "[steps('vmSettings').vmSize]",
+      "dataDiskSizeGB": "[steps('vmSettings').dataDiskSizeGB]",
+      "sshSourceIP": "[steps('vmSettings').sshSourceIP]"
+    }
+  }
+}

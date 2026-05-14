@@ -88,6 +88,9 @@ FIRSTBOOT_PARAMS="/opt/smw-marketplace/firstboot/params.env"
 
 exec > >(tee -a "${LOG_FILE}") 2>&1
 
+# Trap ERR — journalise toute erreur fatale (US-02.5)
+trap 'RC=$?; echo "[smw-firstboot] ERREUR fatale — code retour: ${RC} — $(date -u +%Y-%m-%dT%H:%M:%SZ)"; exit ${RC}' ERR
+
 echo "============================================================"
 echo "[smw-firstboot] Démarrage — $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 echo "============================================================"

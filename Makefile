@@ -245,6 +245,43 @@ frontend-test-login-ui: ## Exécuter les tests UI de la page login MediaWiki (cu
 	$(call log_action,Test UI de la page de login SMW...)
 	@E2E_RG=$(E2E_RG) bash packer/scripts/frontend-test.sh login-ui
 
+##@ ARM — Validation (US-02.1)
+
+.PHONY: arm-validate
+arm-validate: ## Valider la syntaxe du template ARM mainTemplate.json (az deployment validate)
+	$(call log_action,Validation ARM template mainTemplate.json...)
+	@az deployment group validate \
+		--resource-group "$(E2E_RG)" \
+		--template-file arm/mainTemplate.json \
+		--parameters imageId="/subscriptions/dummy/resourceGroups/dummy/providers/Microsoft.Compute/galleries/dummy/images/dummy/versions/1.0.0" adminUsername="testuser" adminPublicKey="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC0" wikiHostName="wiki.example.com" wikiAdminEmail="admin@example.com" wikiAdminPassword="T3stPassword1!" databasePassword="T3stPassword2!" \
+		--output table 2>&1 | grep -E "^(Deployment|ERROR|error|Result|State)" || true
+	$(call log_success,Template ARM valide)
+
+##@ Dev Workflow — Itération VM (ADR-614)
+
+.PHONY: vm-dev-create
+vm-dev-create: ## Créer une VM de développement depuis la dernière image gallery (DEV_RG=rg-smw-dev-<user>)
+	$(call log_action,Création VM dev depuis la dernière image gallery...)
+	@bash packer/scripts/vm-dev-manage.sh create
+	$(call log_success,VM dev créée — utilisez 'make vm-dev-status' pour l'IP SSH)
+
+.PHONY: provision-push
+provision-push: ## Synchroniser les scripts provisioners sur la VM dev sans rebuild Packer (ADR-614)
+	$(call log_action,Synchronisation des provisioners vers la VM dev...)
+	@bash packer/scripts/vm-dev-manage.sh push
+	$(call log_success,Provisioners synchronisés)
+
+.PHONY: vm-dev-delete
+vm-dev-delete: ## Supprimer la VM dev et son resource group dédié
+	$(call log_warning,Suppression de la VM dev et son resource group...)
+	@bash packer/scripts/vm-dev-manage.sh delete
+	$(call log_success,Suppression lancée — opération asynchrone Azure)
+
+.PHONY: vm-dev-status
+vm-dev-status: ## Afficher l'état, l'IP et la commande SSH de la VM dev
+	$(call log_action,Statut de la VM dev...)
+	@bash packer/scripts/vm-dev-manage.sh status
+
 ##@ Maintenance
 
 .PHONY: clean

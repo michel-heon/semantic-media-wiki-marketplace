@@ -110,12 +110,12 @@ S5 (EPIC-05 — Listing/Assets)        ← INDÉPENDANT (peut démarrer à tout 
 
 | ID | Titre | Persona | Priorité | Statut |
 |----|-------|---------|----------|--------|
-| US-02.1 | Paramètres ARM injectés au déploiement (`mainTemplate.json`) | P1 Thomas | Must | ☐ |
-| US-02.2 | Wiki HTTPS opérationnel au premier boot | Client | Must | ☐ |
-| US-02.3 | Idempotence `smw-firstboot.service` (rejouer sans corruption) | P1 Thomas | Must | ☐ |
-| US-02.4 | Aucun secret dans l'image (injection runtime uniquement) | P1 Thomas | Must | ☐ |
-| US-02.5 | Log firstboot lisible par le client (`journalctl -u smw-firstboot`) | Client | Should | ☐ |
-| US-02.6 | Workflow itération rapide dev (ADR-614) | P1 Thomas | Should | ☐ |
+| US-02.1 | Paramètres ARM injectés au déploiement (`mainTemplate.json`) | P1 Thomas | Must | ✅ |
+| US-02.2 | Wiki HTTPS opérationnel au premier boot | Client | Must | ✅ |
+| US-02.3 | Idempotence `smw-firstboot.service` (rejouer sans corruption) | P1 Thomas | Must | ✅ |
+| US-02.4 | Aucun secret dans l'image (injection runtime uniquement) | P1 Thomas | Must | ✅ |
+| US-02.5 | Log firstboot lisible par le client (`journalctl -u smw-firstboot`) | Client | Should | ✅ |
+| US-02.6 | Workflow itération rapide dev (ADR-614) | P1 Thomas | Should | ✅ |
 | US-02.7 | **Validation DoD EPIC-02 — sign-off P6** | P6 Karim | Must | ☐ |
 
 ### Cérémonies
