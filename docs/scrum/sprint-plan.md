@@ -13,8 +13,8 @@ Ubuntu 22.04 LTS · PHP 8.2-FPM · MySQL 8.x · MediaWiki 1.43.x · SMW 6.0.1 ·
 
 | Sprint | Épopée | Dates | Objectif principal | Phase |
 |--------|--------|-------|--------------------|-------|
-| [S1](#sprint-1--pipeline-de-build-packer) | EPIC-01 | 2026-05-11 → 2026-05-24 | Pipeline Packer opérationnel, image dans la gallery | 1 — MVP image |
-| [S2](#sprint-2--runtime-client--firstboot--arm) | EPIC-02 | 2026-05-25 → 2026-06-07 | VM auto-configurée HTTPS au premier boot | 1 — MVP image |
+| [S1](#sprint-1--pipeline-de-build-packer) | EPIC-01 | ~~2026-05-11 → 2026-05-24~~ | Pipeline Packer opérationnel, image dans la gallery | 1 — MVP image — ✅ **Fermé** `v0.3.0-first-packer-build` |
+| [S2](#sprint-2--runtime-client--firstboot--arm) | EPIC-02 | **2026-05-14 → 2026-05-27** | VM auto-configurée HTTPS au premier boot | 1 — MVP image — 🟡 **En cours** |
 | [S3](#sprint-3--sécurité-hardening-et-certification-amat) | EPIC-03 | 2026-06-08 → 2026-06-21 | Image certifiable — 15 contrôles AMAT passés | 1 — MVP image |
 | [S4](#sprint-4--offre-partner-center-et-configuration-technique) | EPIC-04 | 2026-06-22 → 2026-07-05 | Offre Partner Center créée, plan Preview soumis | 2 — Preview |
 | [S5](#sprint-5--contenu-listing-et-assets-marketplace) | EPIC-05 | 2026-07-06 → 2026-07-19 | Listing complet validé par le PO | 2 — Preview |
@@ -100,11 +100,11 @@ S5 (EPIC-05 — Listing/Assets)        ← INDÉPENDANT (peut démarrer à tout 
 | Attribut | Valeur |
 |----------|--------|
 | **Épopée** | EPIC-02 |
-| **Dates** | 2026-05-25 → 2026-06-07 (2 semaines) |
+| **Dates** | **2026-05-14 → 2026-05-27** (démarré en avance — Sprint 1 fermé le 2026-05-14) |
 | **Objectif** | Un client qui déploie la VM depuis Marketplace obtient un wiki SMW opérationnel en HTTPS sans intervention manuelle. |
 | **Persona principal** | P1 Thomas R. (DevOps Image Builder) |
 | **Validateur fin de sprint** | P6 Karim B. (sign-off DoD, US-02.7) |
-| **Prérequis** | Sprint 1 fermé — image disponible dans `galSMWMarketplace` |
+| **Prérequis** | Sprint 1 fermé ✅ — image disponible dans `galSMWMarketplace` (`v0.3.0-first-packer-build`) |
 
 ### Backlog du sprint
 
@@ -122,10 +122,10 @@ S5 (EPIC-05 — Listing/Assets)        ← INDÉPENDANT (peut démarrer à tout 
 
 | Cérémonie | Moment | Participants |
 |-----------|--------|--------------|
-| Sprint Planning | 2026-05-25 | P1 Thomas, P5 Jérôme (PO), P6 Karim |
+| Sprint Planning | **2026-05-14** | P1 Thomas, P5 Jérôme (PO), P6 Karim |
 | Daily Scrum | Chaque jour ouvrable | P1 Thomas |
-| Sprint Review | 2026-06-06 | P1 Thomas, P5 Jérôme, P6 Karim |
-| Sprint Retrospective | 2026-06-07 | Équipe complète |
+| Sprint Review | **2026-05-26** | P1 Thomas, P5 Jérôme, P6 Karim |
+| Sprint Retrospective | **2026-05-27** | Équipe complète |
 
 ### Critères de complétion (Definition of Done)
 
