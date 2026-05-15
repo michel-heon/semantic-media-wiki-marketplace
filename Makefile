@@ -300,6 +300,16 @@ integration-test-e2e: ## Phase 3 — Tests E2E post-déploiement ARM (firstboot 
 integration-test: ## Suite complète : Phase 1 (static) + Phase 2 (image) + Phase 3 (e2e)
 	@$(MAKE) -C tests/integration all --no-print-directory
 
+##@ Tests Navigateur (Playwright)
+
+.PHONY: e2e-browser-install
+e2e-browser-install: ## Installer le navigateur Firefox pour Playwright
+	@$(MAKE) -C tests/e2e install --no-print-directory
+
+.PHONY: e2e-browser
+e2e-browser: ## Tests navigateur Firefox — page principale SMW (VM_IP=<ip>)
+	@$(MAKE) -C tests/e2e firefox VM_IP=$(VM_IP) --no-print-directory
+
 ##@ Maintenance
 
 .PHONY: clean
