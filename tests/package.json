@@ -1,5 +1,5 @@
 {
-  "name": "smw-marketplace-e2e",
+  "name": "smw-marketplace-tests",
   "private": true,
   "devDependencies": {
     "@playwright/test": "^1.60.0"

@@ -35,8 +35,12 @@ Thumbs.db
 logs/
 
 # ---------------------------------------------------------------------------
+# Tests — dépendances npm partagées
+# ---------------------------------------------------------------------------
+tests/node_modules/
+tests/package-lock.json
+
 # Tests navigateur E2E (Playwright)
 # ---------------------------------------------------------------------------
-tests/e2e/node_modules/
 tests/e2e/test-results/
 tests/e2e/playwright-report/

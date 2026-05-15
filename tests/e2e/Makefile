@@ -3,7 +3,7 @@
 # Tests navigateur E2E — SMW Marketplace (Playwright / Firefox)
 # =============================================================================
 # Usage depuis ce répertoire :
-#   make install    — Installer le navigateur Firefox pour Playwright
+#   make install    — Installer les dépendances npm + Firefox (via tests/Makefile)
 #   make firefox    — Lancer les tests (VM_IP=<ip> optionnel)
 #   make all        — install + firefox
 #
@@ -34,16 +34,13 @@ endef
 
 .PHONY: install firefox all help
 
-install: ## Installer @playwright/test + le navigateur Firefox
-	$(call log_action,Installation @playwright/test...)
-	@npm install --prefix $(CURDIR)
-	$(call log_action,Installation Firefox pour Playwright...)
-	@$(CURDIR)/node_modules/.bin/playwright install firefox
-	@printf "$(GREEN)  ✓ @playwright/test + Firefox installés$(NC)\n"
+install: ## Installer @playwright/test + le navigateur Firefox (délégué à tests/Makefile)
+	$(call log_action,Installation des dépendances npm (délégué à tests/)...)
+	@$(MAKE) -C $(CURDIR)/.. install --no-print-directory
 
 firefox: ## Lancer les tests navigateur Firefox (VM_IP=<ip> si différent du défaut)
 	$(call log_action,Tests navigateur Firefox — https://$(VM_IP)/...)
-	@VM_IP=$(VM_IP) $(CURDIR)/node_modules/.bin/playwright test \
+	@VM_IP=$(VM_IP) $(CURDIR)/../node_modules/.bin/playwright test \
 		--config $(CURDIR)/playwright.config.js \
 		--project firefox
 

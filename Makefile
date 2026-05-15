@@ -303,8 +303,8 @@ integration-test: ## Suite complète : Phase 1 (static) + Phase 2 (image) + Phas
 ##@ Tests Navigateur (Playwright)
 
 .PHONY: e2e-browser-install
-e2e-browser-install: ## Installer le navigateur Firefox pour Playwright
-	@$(MAKE) -C tests/e2e install --no-print-directory
+e2e-browser-install: ## Installer les dépendances npm + navigateur Firefox (Playwright)
+	@$(MAKE) -C tests install --no-print-directory
 
 .PHONY: e2e-browser
 e2e-browser: ## Tests navigateur Firefox — page principale SMW (VM_IP=<ip>)
