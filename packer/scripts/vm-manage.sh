@@ -22,8 +22,12 @@ set -euo pipefail
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 
+# --- Racine du dépôt (chemin absolu, indépendant du CWD appelant) ---
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
 # --- Source de la configuration générée (ADR-600) ---
-CONFIG_MAKE="env/generated/config.make"
+CONFIG_MAKE="${REPO_ROOT}/env/generated/config.make"
 if [ -f "$CONFIG_MAKE" ]; then
     # shellcheck disable=SC1090
     source "$CONFIG_MAKE"

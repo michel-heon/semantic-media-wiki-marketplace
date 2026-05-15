@@ -148,6 +148,26 @@ if [[ -z "${SMW_DB_PASSWORD:-}" ]]; then
     echo "[smw-firstboot] Mot de passe DB généré automatiquement"
 fi
 
+# ---------------------------------------------------------------------------
+# Auto-détection de l'IP publique si hostname = localhost (ADR-618)
+# Priorité : Azure IMDS → icanhazip.com (fallback)
+# Activé quand aucun customData ni params.env n'est fourni (mode E2E sans config)
+# ---------------------------------------------------------------------------
+if [[ "${SMW_WIKI_HOSTNAME}" == "localhost" ]]; then
+    DETECTED_IP=$(curl -sf --connect-timeout 5 -H "Metadata:true" \
+        "http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/publicIpAddress?api-version=2021-02-01&format=text" \
+        2>/dev/null || true)
+    if [[ -z "${DETECTED_IP}" ]]; then
+        DETECTED_IP=$(curl -sf --connect-timeout 5 https://icanhazip.com 2>/dev/null | tr -d '\n' || true)
+    fi
+    if [[ -n "${DETECTED_IP}" ]]; then
+        SMW_WIKI_HOSTNAME="${DETECTED_IP}"
+        echo "[smw-firstboot] IP publique auto-détectée : ${SMW_WIKI_HOSTNAME}"
+    else
+        echo "[smw-firstboot] AVERTISSEMENT: détection IP publique échouée — hostname reste localhost"
+    fi
+fi
+
 WIKI_SERVER="https://${SMW_WIKI_HOSTNAME}"
 echo "[smw-firstboot] Paramètres : wiki=${SMW_WIKI_NAME} | hostname=${SMW_WIKI_HOSTNAME} | admin=${SMW_ADMIN_USER}"
 

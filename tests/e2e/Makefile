@@ -3,16 +3,23 @@
 # Tests navigateur E2E — SMW Marketplace (Playwright / Firefox)
 # =============================================================================
 # Usage depuis ce répertoire :
-#   make install    — Installer les dépendances npm + Firefox (via tests/Makefile)
-#   make firefox    — Lancer les tests (VM_IP=<ip> optionnel)
-#   make all        — install + firefox
+#   make firefox           — Lancer les tests (VM_IP=<ip> optionnel)
+#   make vm-e2e-create     — Créer la VM de test E2E (depuis dernière image gallery)
+#   make vm-e2e-delete     — Supprimer la VM de test E2E
+#   make vm-e2e-reboot     — Assigner le DNS et redémarrer la VM de test E2E
+#   make vm-e2e-status     — Afficher l'état, l'IP et l'URL de la VM de test E2E
 #
 # Usage depuis la racine :
 #   make e2e-browser VM_IP=20.48.144.74
+#
+# Dépendances npm : gérer depuis tests/ avec `make -C tests install`
 # =============================================================================
 
-REPO_ROOT := $(shell cd ../.. && pwd)
 VM_IP     ?= 20.48.144.74
+E2E_RG    ?= rg-smw-marketplace-e2e
+REPO_ROOT := $(CURDIR)/../..
+BUILD_DATE := $(shell date +%Y%m%d)
+VM_MANAGE := $(REPO_ROOT)/packer/scripts/vm-manage.sh
 
 # ---------------------------------------------------------------------------
 # Couleurs (ADR-611)
@@ -32,11 +39,7 @@ endef
 # ---------------------------------------------------------------------------
 .DEFAULT_GOAL := firefox
 
-.PHONY: install firefox all help
-
-install: ## Installer @playwright/test + le navigateur Firefox (délégué à tests/Makefile)
-	$(call log_action,Installation des dépendances npm (délégué à tests/)...)
-	@$(MAKE) -C $(CURDIR)/.. install --no-print-directory
+.PHONY: firefox vm-e2e-create vm-e2e-delete vm-e2e-reboot vm-e2e-status help
 
 firefox: ## Lancer les tests navigateur Firefox (VM_IP=<ip> si différent du défaut)
 	$(call log_action,Tests navigateur Firefox — https://$(VM_IP)/...)
@@ -44,9 +47,23 @@ firefox: ## Lancer les tests navigateur Firefox (VM_IP=<ip> si différent du dé
 		--config $(CURDIR)/playwright.config.js \
 		--project firefox
 
-all: install firefox ## Installer Firefox + lancer les tests
+vm-e2e-create: ## Créer la VM de test E2E depuis la dernière image gallery (E2E_RG=<rg>)
+	$(call log_action,Vérification / création VM de test E2E...)
+	@BUILD_DATE=$(BUILD_DATE) E2E_RG=$(E2E_RG) bash $(VM_MANAGE) ensure
+
+vm-e2e-delete: ## Supprimer la VM de test E2E (E2E_RG=<rg>)
+	$(call log_action,Suppression de la VM de test E2E...)
+	@E2E_RG=$(E2E_RG) bash $(VM_MANAGE) delete
+
+vm-e2e-reboot: ## Assigner le DNS puis redémarrer la VM de test E2E (E2E_RG=<rg>)
+	$(call log_action,Attribution DNS + redémarrage de la VM de test E2E...)
+	@E2E_RG=$(E2E_RG) bash $(VM_MANAGE) dns-assign-reboot
+
+vm-e2e-status: ## Afficher l'état, l'IP, le DNS et l'URL de la VM de test E2E (E2E_RG=<rg>)
+	$(call log_action,Statut de la VM de test E2E...)
+	@E2E_RG=$(E2E_RG) bash $(VM_MANAGE) status
 
 help: ## Afficher l'aide
 	@printf "$(CYAN)Tests navigateur E2E — SMW Marketplace (Playwright / Firefox)$(NC)\n\n"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 	  awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
