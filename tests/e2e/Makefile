@@ -22,16 +22,6 @@ REPO_ROOT := $(CURDIR)/../..
 BUILD_DATE := $(shell date +%Y%m%d)
 VM_MANAGE := $(REPO_ROOT)/packer/scripts/vm-manage.sh
 
-# Résout VM_IP en IPv4 brute pour les assertions $wgServer (ADR-602: orchestration Makefile)
-# Si VM_IP est déjà une IPv4, la réutilise tel quel.
-# Si VM_IP est un FQDN, résout via getent hosts (DNS système).
-_VM_RESOLVED_IP := $(shell \
-  if echo "$(VM_IP)" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$$'; then \
-    echo "$(VM_IP)"; \
-  else \
-    resolved=$$(getent hosts "$(VM_IP)" 2>/dev/null | awk '{print $$1}' | head -1); \
-    echo "$${resolved:-$(VM_IP)}"; \
-  fi)
 
 # ---------------------------------------------------------------------------
 # Couleurs (ADR-611)
@@ -55,7 +45,7 @@ endef
 
 firefox: ## Lancer les tests navigateur Firefox (VM_IP=<ip|fqdn> si différent du défaut)
 	$(call log_action,Tests navigateur Firefox — https://$(VM_IP)/...)
-	@VM_IP=$(VM_IP) VM_RESOLVED_IP=$(_VM_RESOLVED_IP) $(CURDIR)/../node_modules/.bin/playwright test \
+	@VM_IP=$(VM_IP) $(CURDIR)/../node_modules/.bin/playwright test \
 		--config $(CURDIR)/playwright.config.js \
 		--project firefox
 

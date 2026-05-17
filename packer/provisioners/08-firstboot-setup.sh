@@ -149,22 +149,40 @@ if [[ -z "${SMW_DB_PASSWORD:-}" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Auto-détection de l'IP publique si hostname = localhost (ADR-618)
-# Priorité : Azure IMDS → icanhazip.com (fallback)
-# Activé quand aucun customData ni params.env n'est fourni (mode E2E sans config)
+# Auto-détection du hostname public si hostname = localhost (ADR-618)
+# Priorité : Azure IMDS (IP) → reverse DNS (FQDN si label DNS Azure assigné)
+#            → icanhazip.com (fallback IP si IMDS indisponible)
+# Activé quand SMW_WIKI_HOSTNAME reste "localhost" (pas de customData ni params.env
+# avec un hostname explicite).
+#
+# Stratégie générique :
+#   1. Obtenir l'IPv4 publique via Azure IMDS (fiable dans toutes les VMs Azure)
+#   2. Tenter un reverse DNS (getent hosts) sur cette IP :
+#      - Azure assigne automatiquement un PTR quand un label DNS est défini sur
+#        l'IP publique (ex: smw-test-20260517.canadacentral.cloudapp.azure.com)
+#      - Si PTR disponible → utiliser le FQDN comme $wgServer
+#      - Sinon → utiliser l'IPv4 brute
 # ---------------------------------------------------------------------------
 if [[ "${SMW_WIKI_HOSTNAME}" == "localhost" ]]; then
     DETECTED_IP=$(curl -sf --connect-timeout 5 -H "Metadata:true" \
         "http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/publicIpAddress?api-version=2021-02-01&format=text" \
-        2>/dev/null || true)
+        2>/dev/null | tr -d '\n' || true)
     if [[ -z "${DETECTED_IP}" ]]; then
         DETECTED_IP=$(curl -sf --connect-timeout 5 https://icanhazip.com 2>/dev/null | tr -d '\n' || true)
     fi
+
     if [[ -n "${DETECTED_IP}" ]]; then
-        SMW_WIKI_HOSTNAME="${DETECTED_IP}"
-        echo "[smw-firstboot] IP publique auto-détectée : ${SMW_WIKI_HOSTNAME}"
+        # Tentative reverse DNS — détecte le FQDN Azure si un label DNS est assigné
+        DETECTED_FQDN=$(getent hosts "${DETECTED_IP}" 2>/dev/null | awk '{print $2}' | head -1 || true)
+        if [[ -n "${DETECTED_FQDN}" ]] && [[ "${DETECTED_FQDN}" != "${DETECTED_IP}" ]]; then
+            SMW_WIKI_HOSTNAME="${DETECTED_FQDN}"
+            echo "[smw-firstboot] FQDN détecté via reverse DNS : ${SMW_WIKI_HOSTNAME}"
+        else
+            SMW_WIKI_HOSTNAME="${DETECTED_IP}"
+            echo "[smw-firstboot] IP publique auto-détectée : ${SMW_WIKI_HOSTNAME} (aucun label DNS Azure)"
+        fi
     else
-        echo "[smw-firstboot] AVERTISSEMENT: détection IP publique échouée — hostname reste localhost"
+        echo "[smw-firstboot] AVERTISSEMENT: détection IP/FQDN publique échouée — hostname reste localhost"
     fi
 fi
 

@@ -8,17 +8,15 @@ const { test, expect } = require('@playwright/test');
 test.describe('SMW Marketplace — Navigateur Firefox', () => {
 
   // ---------------------------------------------------------------------------
-  // T-BROWSER-00 : vérifie que la redirection "/" pointe vers l'adresse externe
-  // Détecte la misconfiguration $wgServer = 'https://localhost' dans LocalSettings.php
-  // VM_IP        : adresse de connexion à la VM (IP ou FQDN)
-  // VM_RESOLVED_IP : IPv4 publique de la VM — fournie par le Makefile (ADR-602)
-  //   La VM configure $wgServer avec l'IP IMDS (IPv4), pas le FQDN Azure.
-  //   Le Makefile résout le FQDN → IP via getent hosts avant de lancer les tests.
+  // T-BROWSER-00 : vérifie que la redirection "/" pointe vers l'adresse de connexion
+  // Détecte deux misconfigurations :
+  //   1. $wgServer = 'https://localhost'  (valeur par défaut non remplacée)
+  //   2. $wgServer = 'https://<IP>'      quand la VM est accédée via un FQDN
+  //      (smw-firstboot.sh doit détecter le FQDN via reverse DNS — ADR-618)
+  // VM_IP : adresse de connexion (IP ou FQDN) — le Location header doit la contenir.
   // ---------------------------------------------------------------------------
-  test('T-BROWSER-00: redirect "/" → IP externe (pas localhost)', async ({ request }) => {
+  test('T-BROWSER-00: redirect "/" → adresse de connexion (pas localhost, pas IP si FQDN)', async ({ request }) => {
     const vmIP = process.env.VM_IP || '20.48.144.74';
-    // IP attendue dans le Location header ($wgServer) — peut différer de VM_IP si FQDN
-    const wgServerIP = process.env.VM_RESOLVED_IP || vmIP;
 
     // Récupère "/" sans suivre les redirections pour inspecter le Location header
     const response = await request.get(`https://${vmIP}/`, { maxRedirects: 0 });
@@ -30,13 +28,16 @@ test.describe('SMW Marketplace — Navigateur Firefox', () => {
     const location = response.headers()['location'] ?? '';
     expect(
       location,
-      `ÉCHEC $wgServer: redirect "/" → "${location}" pointe vers localhost au lieu de https://${wgServerIP}/...`
+      `ÉCHEC $wgServer: redirect "/" → "${location}" pointe vers localhost au lieu de https://${vmIP}/...`
     ).not.toMatch(/\/\/localhost/);
 
+    // La redirection doit contenir l'adresse utilisée pour se connecter.
+    // Si VM_IP est un FQDN, le Location doit contenir ce FQDN (pas l'IP brute).
     expect(
       location,
-      `ÉCHEC: redirect "/" → "${location}" ne contient pas l'IP publique de la VM (${wgServerIP})`
-    ).toContain(wgServerIP);
+      `ÉCHEC $wgServer: redirect "/" → "${location}" ne correspond pas à l'adresse de connexion (${vmIP}). ` +
+      `smw-firstboot.sh doit configurer $wgServer avec le FQDN quand un label DNS est assigné.`
+    ).toContain(vmIP);
   });
 
   // ---------------------------------------------------------------------------
