@@ -66,4 +66,23 @@ test.describe('SMW Marketplace — Navigateur Firefox', () => {
     await expect(page.locator('body')).not.toContainText('Parse error');
   });
 
+  // ---------------------------------------------------------------------------
+  // T-BROWSER-04 : vérifie que le skin vector-2022 est actif
+  // Détecte la misconfiguration $wgDefaultSkin sans wfLoadSkin() correspondant
+  // (MediaWiki 1.24+ exige wfLoadSkin() explicite — autodiscovery supprimé)
+  // ---------------------------------------------------------------------------
+  test('T-BROWSER-04: skin vector-2022 actif (pas de skin error)', async ({ page }) => {
+    await page.goto('/wiki/Main_Page');
+
+    // Pas de message d'erreur "skin not available"
+    await expect(page.locator('body')).not.toContainText('is not available');
+    await expect(page.locator('body')).not.toContainText('skin-error');
+
+    // Le body doit porter la classe CSS skin-vector-2022
+    await expect(page.locator('body')).toHaveClass(/skin-vector-2022/);
+
+    // La page doit charger normalement (pas la page d'erreur de skin)
+    await expect(page.locator('#mw-content-text')).toBeVisible();
+  });
+
 });
