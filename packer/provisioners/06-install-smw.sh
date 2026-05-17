@@ -108,6 +108,15 @@ if ( file_exists( __DIR__ . '/LocalSettings.firstboot.php' ) ) {
     require_once __DIR__ . '/LocalSettings.firstboot.php';
 }
 
+# Skins bundlées — activation explicite requise depuis MediaWiki 1.24+
+# Ref: https://www.mediawiki.org/wiki/Manual:Skin_autodiscovery
+wfLoadSkin( 'Vector' );      # fournit 'vector' et 'vector-2022'
+wfLoadSkin( 'MonoBook' );
+wfLoadSkin( 'Timeless' );
+wfLoadSkin( 'MinervaNeue' );
+
+$wgDefaultSkin = 'vector-2022';
+
 # Semantic MediaWiki — chargement de l'extension
 wfLoadExtension( 'SemanticMediaWiki' );
 enableSemantics( $wgServer ?? 'localhost' );
