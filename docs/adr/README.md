@@ -104,6 +104,7 @@ git commit -m "docs(adr): ADR-201 [INFRA] Nouvelle décision"
 | [614](./614-DEVOPS-dev-vm-iteration-workflow.md) | Workflow de Développement VM Rapide | ✅ Accepté | 2026-04-16 | DevOps |
 | [616](./616-DEVOPS-blob-storage-cache-packages-packer.md) | Blob Storage Azure comme Cache de Packages pour les Builds Packer | ✅ Accepté | 2026-05-08 | DevOps |
 | [617](./617-DEVOPS-packer-outil-construction-images-vm.md) | HashiCorp Packer — Outil de Construction d'Images VM Azure | ✅ Accepté | 2026-05-09 | DevOps |
+| [618](./618-DEVOPS-strategie-debug-post-image-vm.md) | Stratégie de Débogage Post-Image : Cycle Observation VM → Correction Provisioner | ✅ Accepté | 2026-05-15 | DevOps |
 
 ---
 
@@ -112,6 +113,7 @@ git commit -m "docs(adr): ADR-201 [INFRA] Nouvelle décision"
 | ADR | Titre | Statut | Date | Domaine |
 |-----|-------|--------|------|---------|
 | [700](./700-TEST-plan-tests-integration.md) | Plan de Tests d'Intégration — SMW Marketplace | ✅ Accepté | 2026-05-12 | Test |
+| [701](./701-TEST-protocole-qualification-post-image-vm.md) | Protocole de Qualification Post-Image : Critères d'Acceptation et Non-Régression | ✅ Accepté | 2026-05-15 | Test |
 
 
 ---
