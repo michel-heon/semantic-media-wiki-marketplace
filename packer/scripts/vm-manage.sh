@@ -99,22 +99,23 @@ case "$cmd" in
                 --public-ip-sku Standard \
                 --output table
             printf "${GREEN}  ✓ VM créée : ${VM_NAME}${NC}\n"
-            NSG_NAME="${VM_NAME}NSG"
-            printf "${CYAN}  → Ouverture ports HTTP/HTTPS dans le NSG : ${NSG_NAME}${NC}\n"
-            az network nsg rule create \
-                -g "$E2E_RG" --nsg-name "${NSG_NAME}" \
-                -n allow-http --priority 1010 \
-                --access Allow --direction Inbound \
-                --protocol Tcp --destination-port-ranges 80 --output none
-            az network nsg rule create \
-                -g "$E2E_RG" --nsg-name "${NSG_NAME}" \
-                -n allow-https --priority 1020 \
-                --access Allow --direction Inbound \
-                --protocol Tcp --destination-port-ranges 443 --output none
-            printf "${GREEN}  ✓ Ports 80/443 ouverts dans le NSG${NC}\n"
         else
-            printf "${GREEN}  ✓ VM de test existante : ${VM}${NC}\n"
+            VM_NAME="$VM"
+            printf "${GREEN}  ✓ VM de test existante : ${VM_NAME}${NC}\n"
         fi
+        NSG_NAME="${VM_NAME}NSG"
+        printf "${CYAN}  → Vérification ports HTTP/HTTPS dans le NSG : ${NSG_NAME}${NC}\n"
+        az network nsg rule create \
+            -g "$E2E_RG" --nsg-name "${NSG_NAME}" \
+            -n allow-http --priority 1010 \
+            --access Allow --direction Inbound \
+            --protocol Tcp --destination-port-ranges 80 --output none 2>/dev/null || true
+        az network nsg rule create \
+            -g "$E2E_RG" --nsg-name "${NSG_NAME}" \
+            -n allow-https --priority 1020 \
+            --access Allow --direction Inbound \
+            --protocol Tcp --destination-port-ranges 443 --output none 2>/dev/null || true
+        printf "${GREEN}  ✓ Ports 80/443 ouverts dans le NSG${NC}\n"
         ;;
 
     stop)
