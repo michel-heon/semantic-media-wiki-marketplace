@@ -8,11 +8,17 @@ const { test, expect } = require('@playwright/test');
 test.describe('SMW Marketplace — Navigateur Firefox', () => {
 
   // ---------------------------------------------------------------------------
-  // T-BROWSER-00 : vérifie que la redirection "/" pointe vers l'IP externe
+  // T-BROWSER-00 : vérifie que la redirection "/" pointe vers l'adresse externe
   // Détecte la misconfiguration $wgServer = 'https://localhost' dans LocalSettings.php
+  // VM_IP        : adresse de connexion à la VM (IP ou FQDN)
+  // VM_RESOLVED_IP : IPv4 publique de la VM — fournie par le Makefile (ADR-602)
+  //   La VM configure $wgServer avec l'IP IMDS (IPv4), pas le FQDN Azure.
+  //   Le Makefile résout le FQDN → IP via getent hosts avant de lancer les tests.
   // ---------------------------------------------------------------------------
   test('T-BROWSER-00: redirect "/" → IP externe (pas localhost)', async ({ request }) => {
     const vmIP = process.env.VM_IP || '20.48.144.74';
+    // IP attendue dans le Location header ($wgServer) — peut différer de VM_IP si FQDN
+    const wgServerIP = process.env.VM_RESOLVED_IP || vmIP;
 
     // Récupère "/" sans suivre les redirections pour inspecter le Location header
     const response = await request.get(`https://${vmIP}/`, { maxRedirects: 0 });
@@ -24,12 +30,13 @@ test.describe('SMW Marketplace — Navigateur Firefox', () => {
     const location = response.headers()['location'] ?? '';
     expect(
       location,
-      `ÉCHEC $wgServer: redirect "/" → "${location}" pointe vers localhost au lieu de https://${vmIP}/...`
+      `ÉCHEC $wgServer: redirect "/" → "${location}" pointe vers localhost au lieu de https://${wgServerIP}/...`
     ).not.toMatch(/\/\/localhost/);
+
     expect(
       location,
-      `ÉCHEC: redirect "/" → "${location}" doit contenir l'IP ${vmIP}`
-    ).toContain(vmIP);
+      `ÉCHEC: redirect "/" → "${location}" ne contient pas l'IP publique de la VM (${wgServerIP})`
+    ).toContain(wgServerIP);
   });
 
   // ---------------------------------------------------------------------------

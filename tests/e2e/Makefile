@@ -6,6 +6,7 @@
 #   make firefox           — Lancer les tests (VM_IP=<ip> optionnel)
 #   make vm-e2e-create     — Créer la VM de test E2E (depuis dernière image gallery)
 #   make vm-e2e-delete     — Supprimer la VM de test E2E
+#   make vm-e2e-dns        — Assigner un label DNS à l'IP publique de la VM de test E2E
 #   make vm-e2e-reboot     — Assigner le DNS et redémarrer la VM de test E2E
 #   make vm-e2e-status     — Afficher l'état, l'IP et l'URL de la VM de test E2E
 #
@@ -20,6 +21,17 @@ E2E_RG    ?= rg-smw-marketplace-e2e
 REPO_ROOT := $(CURDIR)/../..
 BUILD_DATE := $(shell date +%Y%m%d)
 VM_MANAGE := $(REPO_ROOT)/packer/scripts/vm-manage.sh
+
+# Résout VM_IP en IPv4 brute pour les assertions $wgServer (ADR-602: orchestration Makefile)
+# Si VM_IP est déjà une IPv4, la réutilise tel quel.
+# Si VM_IP est un FQDN, résout via getent hosts (DNS système).
+_VM_RESOLVED_IP := $(shell \
+  if echo "$(VM_IP)" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$$'; then \
+    echo "$(VM_IP)"; \
+  else \
+    resolved=$$(getent hosts "$(VM_IP)" 2>/dev/null | awk '{print $$1}' | head -1); \
+    echo "$${resolved:-$(VM_IP)}"; \
+  fi)
 
 # ---------------------------------------------------------------------------
 # Couleurs (ADR-611)
@@ -39,11 +51,11 @@ endef
 # ---------------------------------------------------------------------------
 .DEFAULT_GOAL := firefox
 
-.PHONY: firefox vm-e2e-create vm-e2e-delete vm-e2e-reboot vm-e2e-status help
+.PHONY: firefox vm-e2e-create vm-e2e-delete vm-e2e-dns vm-e2e-reboot vm-e2e-status help
 
-firefox: ## Lancer les tests navigateur Firefox (VM_IP=<ip> si différent du défaut)
+firefox: ## Lancer les tests navigateur Firefox (VM_IP=<ip|fqdn> si différent du défaut)
 	$(call log_action,Tests navigateur Firefox — https://$(VM_IP)/...)
-	@VM_IP=$(VM_IP) $(CURDIR)/../node_modules/.bin/playwright test \
+	@VM_IP=$(VM_IP) VM_RESOLVED_IP=$(_VM_RESOLVED_IP) $(CURDIR)/../node_modules/.bin/playwright test \
 		--config $(CURDIR)/playwright.config.js \
 		--project firefox
 
@@ -54,6 +66,10 @@ vm-e2e-create: ## Créer la VM de test E2E depuis la dernière image gallery (E2
 vm-e2e-delete: ## Supprimer la VM de test E2E (E2E_RG=<rg>)
 	$(call log_action,Suppression de la VM de test E2E...)
 	@E2E_RG=$(E2E_RG) bash $(VM_MANAGE) delete
+
+vm-e2e-dns: ## Assigner un label DNS à l'IP publique de la VM de test E2E (E2E_RG=<rg>)
+	$(call log_action,Attribution label DNS à la VM de test E2E...)
+	@E2E_RG=$(E2E_RG) bash $(VM_MANAGE) dns-assign
 
 vm-e2e-reboot: ## Assigner le DNS puis redémarrer la VM de test E2E (E2E_RG=<rg>)
 	$(call log_action,Attribution DNS + redémarrage de la VM de test E2E...)
