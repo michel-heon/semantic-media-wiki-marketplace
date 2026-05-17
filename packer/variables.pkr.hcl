@@ -150,6 +150,12 @@ variable "packer_sas_token" {
 # Wiki — configuration applicative
 # ---------------------------------------------------------------------------
 
+variable "wiki_http_port" {
+  type        = string
+  default     = "80"
+  description = "Port HTTP du wiki MediaWiki — redirection vers HTTPS (ex: 80)"
+}
+
 variable "wiki_port" {
   type        = string
   default     = "443"

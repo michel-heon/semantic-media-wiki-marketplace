@@ -109,13 +109,13 @@ case "$cmd" in
             -g "$E2E_RG" --nsg-name "${NSG_NAME}" \
             -n allow-http --priority 1010 \
             --access Allow --direction Inbound \
-            --protocol Tcp --destination-port-ranges 80 --output none 2>/dev/null || true
+            --protocol Tcp --destination-port-ranges "${WIKI_HTTP_PORT:-80}" --output none 2>/dev/null || true
         az network nsg rule create \
             -g "$E2E_RG" --nsg-name "${NSG_NAME}" \
             -n allow-https --priority 1020 \
             --access Allow --direction Inbound \
-            --protocol Tcp --destination-port-ranges 443 --output none 2>/dev/null || true
-        printf "${GREEN}  ✓ Ports 80/443 ouverts dans le NSG${NC}\n"
+            --protocol Tcp --destination-port-ranges "${WIKI_PORT:-443}" --output none 2>/dev/null || true
+        printf "${GREEN}  ✓ Ports ${WIKI_HTTP_PORT:-80}/${WIKI_PORT:-443} ouverts dans le NSG${NC}\n"
         ;;
 
     stop)
