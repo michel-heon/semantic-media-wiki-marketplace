@@ -135,11 +135,13 @@ case "$cmd" in
         ;;
 
     delete)
-        VM=$(find_test_vm)
-        [ -z "$VM" ] && { printf "${RED}  ✗ Aucune VM dans ${E2E_RG}${NC}\n"; exit 1; }
-        printf "${CYAN}  → Suppression : ${VM}${NC}\n"
-        az vm delete -g "$E2E_RG" -n "$VM" --yes --no-wait
-        printf "${GREEN}  ✓ Suppression lancée : ${VM}${NC}\n"
+        if ! az group show -n "$E2E_RG" --output none 2>/dev/null; then
+            printf "${YELLOW}  ➜ Resource group inexistant : ${E2E_RG}${NC}\n"
+            exit 0
+        fi
+        printf "${CYAN}  → Suppression du resource group (VM + ressources associées) : ${E2E_RG}${NC}\n"
+        az group delete -n "$E2E_RG" --yes --no-wait
+        printf "${GREEN}  ✓ Suppression lancée : ${E2E_RG}${NC}\n"
         ;;
 
     id)
