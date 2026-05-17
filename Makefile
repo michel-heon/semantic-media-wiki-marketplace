@@ -7,7 +7,7 @@
 # │  ADR-600 · Configuration                                                 │
 # │    · Sources : env/.env.dev (public) + env/.env.dev.user (secrets)      │
 # │    · env/generated/ est AUTO-GÉNÉRÉ par 'make config' → NE PAS ÉDITER  │
-# │    · Workflow : éditer la source → make config → make vm-build          │
+# │    · Workflow : éditer la source → make config → make image-build        │
 # │                                                                          │
 # │  ADR-601 · Nomenclature scripts                                          │
 # │    · Format : {objet}-{action}.sh  (ex: vm-manage.sh, check-env.sh)     │
@@ -102,7 +102,7 @@ setup: ## Installer les prérequis (packer, az cli)
 azure-credential: ## Login Azure et injecter les credentials SP dans env/.env.dev.user
 	$(call log_action,Connexion Azure et injection des credentials...)
 	@bash packer/scripts/azure-credential.sh
-	$(call log_success,Credentials prêts — lancez : make config && make vm-build)
+	$(call log_success,Credentials prêts — lancez : make config && make image-build)
 
 .PHONY: check-env
 check-env: ## Vérifier les variables d'environnement requises avant build
@@ -116,7 +116,7 @@ config: ## Générer env/generated/config.make depuis les fichiers .env (ADR-600
 	@bash packer/scripts/config-generate.sh
 	$(call log_success,Configuration générée dans env/generated/)
 
-##@ Packer — Build VM
+##@ Packer — Build Image
 
 .PHONY: packer-init
 packer-init: ## Initialiser les plugins Packer (téléchargement hashicorp/azure)
@@ -124,8 +124,8 @@ packer-init: ## Initialiser les plugins Packer (téléchargement hashicorp/azure
 	packer init "$(PACKER_DIR)/"
 	$(call log_success,Plugins Packer initialisés)
 
-.PHONY: vm-validate
-vm-validate: check-env ## Valider le template Packer sans construire
+.PHONY: image-validate
+image-validate: check-env ## Valider le template Packer sans construire
 	$(call log_action,Validation du template Packer...)
 	packer validate \
 	    -var-file="$(PKRVARS)" \
@@ -133,8 +133,8 @@ vm-validate: check-env ## Valider le template Packer sans construire
 	    "$(PACKER_DIR)/"
 	$(call log_success,Template Packer valide)
 
-.PHONY: vm-build
-vm-build: check-env ## Construire l'image VM SMW (lance packer build)
+.PHONY: image-build
+image-build: check-env ## Construire l'image SMW (lance packer build)
 	$(call log_action,Construction de l'image VM SMW — BUILD_DATE=$(BUILD_DATE))
 	packer init "$(PACKER_DIR)/" && packer build \
 	    -var-file="$(PKRVARS)" \
@@ -142,8 +142,8 @@ vm-build: check-env ## Construire l'image VM SMW (lance packer build)
 	    "$(PACKER_DIR)/"
 	$(call log_success,Image VM construite avec succès)
 
-.PHONY: vm-build-force
-vm-build-force: check-env ## Reconstruire l'image VM SMW (force — écrase les artefacts existants)
+.PHONY: image-build-force
+image-build-force: check-env ## Reconstruire l'image SMW (force — écrase les artefacts existants)
 	$(call log_action,Construction forcée de l'image VM SMW — BUILD_DATE=$(BUILD_DATE))
 	packer init "$(PACKER_DIR)/" && packer build \
 	    -force \
