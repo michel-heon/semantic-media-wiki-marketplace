@@ -187,7 +187,7 @@ E2E_RG ?= rg-smw-marketplace-e2e
 CTT     := packer/scripts/marketplace-ctt.sh
 
 .PHONY: vm-ensure vm-stop vm-start vm-delete vm-status image-id
-.PHONY: vm-dns-assign vm-dns-assign-reboot
+.PHONY: vm-dns-assign vm-dns-assign-reboot vm-firstboot-reset
 .PHONY: marketplace-info marketplace-validate marketplace-all marketplace-test marketplace-tests
 
 vm-ensure: ## Créer la VM de test SMW si elle n'existe pas (depuis dernière image gallery)
@@ -221,6 +221,10 @@ vm-dns-assign: ## Assigner un label DNS à l'IP publique de la VM de test
 vm-dns-assign-reboot: ## Assigner le DNS puis rebooter la VM (auto-config via IMDS au démarrage)
 	$(call log_action,Attribution DNS + redémarrage de la VM de test...)
 	@E2E_RG=$(E2E_RG) bash packer/scripts/vm-manage.sh dns-assign-reboot
+
+vm-firstboot-reset: ## Effacer le sentinel + relancer smw-firstboot avec le FQDN courant
+	$(call log_action,Réinitialisation de smw-firstboot sur la VM de test...)
+	@E2E_RG=$(E2E_RG) bash packer/scripts/vm-manage.sh firstboot-reset
 
 marketplace-info: ## Afficher les infos sur la validation Marketplace CTT
 	@bash $(CTT) info
@@ -309,6 +313,10 @@ e2e-browser-install: ## Installer les dépendances npm + navigateur Firefox (Pla
 .PHONY: e2e-browser
 e2e-browser: ## Tests navigateur Firefox — page principale SMW (VM_IP=<ip>)
 	@$(MAKE) -C tests/e2e firefox VM_IP=$(VM_IP) --no-print-directory
+
+.PHONY: user-smoke
+user-smoke: ## Smoke tests utilisateur SMW — Special:Ask, Browse, annotations, API (VM_IP=<ip>)
+	@$(MAKE) -C tests/user-smoke smoke VM_IP=$(VM_IP) --no-print-directory
 
 ##@ Maintenance
 

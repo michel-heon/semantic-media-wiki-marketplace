@@ -177,8 +177,14 @@ case "$cmd" in
             --output none
         FQDN=$(az network public-ip show -g "$PIP_RG" -n "$PIP_NAME" \
             --query "dnsSettings.fqdn" -o tsv)
+        # DNS inverse (PTR) : permet à getent hosts <ip> de retourner le FQDN dans la VM
+        az network public-ip update \
+            -g "$PIP_RG" \
+            -n "$PIP_NAME" \
+            --reverse-fqdn "${FQDN}" \
+            --output none 2>/dev/null || true
         printf "${GREEN}  ✓ FQDN: ${FQDN}${NC}\n"
-        printf "${CYAN}  ℹ La VM détectera le FQDN via IMDS au prochain démarrage${NC}\n"
+        printf "${CYAN}  ℹ DNS direct + inverse configurés — getent hosts détectera le FQDN${NC}\n"
         ;;
 
     dns-assign-reboot)
@@ -188,6 +194,28 @@ case "$cmd" in
         printf "${CYAN}  → Redémarrage de la VM ${VM}...${NC}\n"
         az vm restart -g "$E2E_RG" -n "$VM" --no-wait
         printf "${GREEN}  ✓ Redémarrage lancé — la VM détectera le FQDN via IMDS au démarrage${NC}\n"
+        ;;
+
+    firstboot-reset)
+        # Efface le sentinel + redémarre smw-firstboot.service via Azure Run Command
+        # Utile quand firstboot a déjà tourné (avec IP) et qu'on veut le rejouer avec le FQDN
+        VM=$(find_test_vm)
+        [ -z "$VM" ] && { printf "${RED}  ✗ Aucune VM dans ${E2E_RG}${NC}\n"; exit 1; }
+        printf "${CYAN}  → Effacement du sentinel et relance de smw-firstboot sur ${VM}...${NC}\n"
+        # Déclenche smw-firstboot avec --no-block pour éviter le timeout de 90s de RunShellScript
+        az vm run-command invoke \
+            -g "$E2E_RG" -n "$VM" \
+            --command-id RunShellScript \
+            --scripts '#!/bin/bash
+set -euo pipefail
+rm -f /var/lib/smw/.firstboot-done
+systemctl stop smw-firstboot.service 2>/dev/null || true
+systemctl reset-failed smw-firstboot.service 2>/dev/null || true
+systemctl start --no-block smw-firstboot.service
+echo "[firstboot-reset] service smw-firstboot déclenché (--no-block)"' \
+            --query 'value[0].message' -o tsv
+        printf "${GREEN}  ✓ smw-firstboot déclenché — en cours d'exécution (attendre ~90s)${NC}\n"
+        printf "${YELLOW}  → Vérifier : journalctl -u smw-firstboot.service -f${NC}\n"
         ;;
 
     status)
@@ -229,7 +257,7 @@ case "$cmd" in
         ;;
 
     *)
-        printf "${RED}Usage: $0 <ensure|stop|start|delete|id|dns-assign|dns-assign-reboot|status>${NC}\n"
+        printf "${RED}Usage: $0 <ensure|stop|start|delete|id|dns-assign|dns-assign-reboot|firstboot-reset|status>${NC}\n"
         exit 1
         ;;
 esac
