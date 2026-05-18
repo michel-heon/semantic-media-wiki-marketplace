@@ -259,11 +259,11 @@ test.describe.serial('SMW User Smoke — Flux authentifié (WikiAdmin)', () => {
 
     await expect(authPage.locator('body')).not.toContainText('Fatal error');
 
-    // La réponse JSON doit contenir la clé "smwinfo"
+    // La réponse JSON doit contenir la clé "info" (SMW 4.x retourne "info" et non "smwinfo")
     const body = await authPage.locator('body').textContent();
     const json = JSON.parse(body);
-    expect(json).toHaveProperty('smwinfo');
-    expect(json.smwinfo).toHaveProperty('propcount');
+    expect(json).toHaveProperty('info');
+    expect(json.info).toHaveProperty('propcount');
   });
 
 });

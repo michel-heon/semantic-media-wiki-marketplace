@@ -12,10 +12,11 @@
 #   id               Afficher l'ID et la version de la dernière image gallery
 #   dns-assign       Assigner un label DNS à l'IP publique de la VM
 #   dns-assign-reboot Assigner le DNS puis redémarrer la VM
-#   status           Afficher l'état, l'IP, le DNS et l'URL de la VM de test
-#   get-ip           Retourner le FQDN (ou l'IP) de la VM — pour scripts/Makefile
+#   status                Afficher l'état, l'IP, le DNS et l'URL de la VM de test
+#   get-ip                Retourner le FQDN (ou l'IP) de la VM — pour scripts/Makefile
+#   reset-admin-password  Réinitialiser le mot de passe WikiAdmin à ChangeMe123!
 # =============================================================================
-# Usage: bash packer/scripts/vm-manage.sh <ensure|stop|start|delete|id|dns-assign|dns-assign-reboot|firstboot-reset|status|get-ip>
+# Usage: bash packer/scripts/vm-manage.sh <ensure|stop|start|delete|id|dns-assign|dns-assign-reboot|firstboot-reset|status|get-ip|reset-admin-password>
 # Variables d'environnement optionnelles (surchargeables) :
 #   E2E_RG, VM_SIZE, GALLERY_NAME, GALLERY_IMAGE_NAME, GALLERY_RESOURCE_GROUP
 # =============================================================================
@@ -90,6 +91,7 @@ case "$cmd" in
                 --location "${AZURE_LOCATION:-canadacentral}" \
                 --output none
             printf "${CYAN}  → Création VM : ${VM_NAME} (${VM_SIZE})${NC}\n"
+            CUSTOM_DATA_B64=$(printf '{"wikiAdminPassword":"ChangeMe123!"}' | base64 -w 0)
             az vm create \
                 --resource-group "$E2E_RG" \
                 --name "$VM_NAME" \
@@ -98,6 +100,7 @@ case "$cmd" in
                 --admin-username azureuser \
                 --generate-ssh-keys \
                 --public-ip-sku Standard \
+                --custom-data "$CUSTOM_DATA_B64" \
                 --output table
             printf "${GREEN}  ✓ VM créée : ${VM_NAME}${NC}\n"
         else
@@ -279,8 +282,20 @@ echo "[firstboot-reset] service smw-firstboot déclenché (--no-block)"' \
         fi
         ;;
 
+    reset-admin-password)
+        VM=$(find_test_vm)
+        [ -z "$VM" ] && { printf "${RED}  ✗ Aucune VM dans ${E2E_RG}${NC}\n"; exit 1; }
+        printf "${CYAN}  → Réinitialisation du mot de passe WikiAdmin sur ${VM}...${NC}\n"
+        az vm run-command invoke \
+            -g "$E2E_RG" -n "$VM" \
+            --command-id RunShellScript \
+            --scripts 'sudo -u www-data php /opt/mediawiki/maintenance/changePassword.php --user WikiAdmin --password "ChangeMe123!"' \
+            --query 'value[0].message' -o tsv
+        printf "${GREEN}  ✓ Mot de passe WikiAdmin réinitialisé → ChangeMe123!${NC}\n"
+        ;;
+
     *)
-        printf "${RED}Usage: $0 <ensure|stop|start|delete|id|dns-assign|dns-assign-reboot|firstboot-reset|status|get-ip>${NC}\n"
+        printf "${RED}Usage: $0 <ensure|stop|start|delete|id|dns-assign|dns-assign-reboot|firstboot-reset|status|get-ip|reset-admin-password>${NC}\n"
         exit 1
         ;;
 esac

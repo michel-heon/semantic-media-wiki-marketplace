@@ -187,7 +187,7 @@ E2E_RG ?= rg-smw-marketplace-e2e
 CTT     := packer/scripts/marketplace-ctt.sh
 
 .PHONY: vm-ensure vm-stop vm-start vm-delete vm-status image-id
-.PHONY: vm-dns-assign vm-dns-assign-reboot vm-firstboot-reset
+.PHONY: vm-dns-assign vm-dns-assign-reboot vm-firstboot-reset vm-reset-admin
 .PHONY: marketplace-info marketplace-validate marketplace-all marketplace-test marketplace-tests
 
 vm-ensure: ## Créer la VM de test SMW si elle n'existe pas (depuis dernière image gallery)
@@ -225,6 +225,10 @@ vm-dns-assign-reboot: ## Assigner le DNS puis rebooter la VM (auto-config via IM
 vm-firstboot-reset: ## Effacer le sentinel + relancer smw-firstboot avec le FQDN courant
 	$(call log_action,Réinitialisation de smw-firstboot sur la VM de test...)
 	@E2E_RG=$(E2E_RG) bash packer/scripts/vm-manage.sh firstboot-reset
+
+vm-reset-admin: ## Réinitialiser le mot de passe WikiAdmin à ChangeMe123! (maintenance/changePassword.php)
+	$(call log_action,Réinitialisation du mot de passe WikiAdmin...)
+	@E2E_RG=$(E2E_RG) bash packer/scripts/vm-manage.sh reset-admin-password
 
 marketplace-info: ## Afficher les infos sur la validation Marketplace CTT
 	@bash $(CTT) info
