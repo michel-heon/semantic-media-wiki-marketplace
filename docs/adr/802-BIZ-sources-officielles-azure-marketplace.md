@@ -141,6 +141,62 @@ Les sources ci-dessous sont les références faisant foi. Elles priment sur tout
 
 ---
 
+### Source 3 — GTM : Best Practices Marketing et Go-To-Market Toolkit
+
+| Attribut | Valeur |
+|----------|--------|
+| **URL principale** | <https://learn.microsoft.com/en-us/partner-center/marketplace-offers/gtm-best-practices> |
+| **GTM Toolkit** | <https://partner.microsoft.com/en-US/asset/collection/microsoft-marketplace-gtm-toolkit#/> |
+| **Best Practices Guide** | <https://aka.ms/marketplacebestpracticesguide> |
+| **Éditeur** | Microsoft (documentation officielle + ressources partenaires) |
+| **Périmètre** | Marketing post-publication, campagnes, listing optimization, co-branding |
+| **Mise à jour** | Collection GTM Toolkit mise à jour le 2026-02-26 |
+
+**Ressources incluses dans le GTM Toolkit (7 assets) :**
+
+| Asset | Contenu | Téléchargement |
+|-------|---------|---------------|
+| **Available on Microsoft Marketplace badges** | Badges PNG/SVG pour promouvoir la disponibilité sur Marketplace | `available-on-microsoft-marketplace-badges.zip` (221.9 KB) |
+| **Co-branded social assets** | Visuels pour LinkedIn, Twitter, Facebook co-brandés Microsoft+Partner | `microsoft-marketplace-co-branded-social-assets.zip` (41.3 MB) |
+| **Co-branded pitch deck** | Présentation PowerPoint L100 sur les avantages d'achat via Marketplace | `microsoft-marketplace-cobranded-pitchdeck.pptx` |
+| **AI-powered listing optimization** | Outil d'analyse et d'amélioration du listing en quelques secondes | <https://www.microsoft.com/en-us/software-development-companies/app-advisor/> |
+| **Marketplace documentation** | Documentation complète Partner Center | <https://learn.microsoft.com/en-us/partner-center/marketplace-offers/> |
+| **Channel-led opportunities** | Ressources multiparty private offers | Collection dédiée |
+| **Lead management** | Gestion des leads CRM générés par le Marketplace | <https://learn.microsoft.com/en-us/partner-center/marketplace-offers/commercial-marketplace-get-customer-leads> |
+
+**Bonnes pratiques de listing (source : `gtm-best-practices`) :**
+
+| Élément | Recommandation Microsoft |
+|---------|------------------------|
+| **Nom de l'offre** | Titre clair incluant les mots-clés de recherche clients |
+| **Description** | Proposition de valeur dans les 2-3 premières phrases (utilisées dans les résultats de recherche) |
+| **Logo** | PNG 216×216 à 350×350 px (obligatoire pour la page de détails) |
+| **Logo search** | 48×48 px — généré automatiquement par Partner Center depuis le grand logo |
+| **Documents "Learn more"** | PDF éducatifs (livres blancs, brochures, présentations) — éduquer, pas vendre |
+| **Vidéos** | 60-90 secondes — faire du **client** le héros, pas l'éditeur |
+| **Screenshots** | Max 5 × 1280×720 px — inclure les mots-clés dans les noms de fichiers |
+
+**Campaign tracking — paramètres UTM :**
+
+| Paramètre | Rôle | Exemple |
+|-----------|------|---------|
+| `ocid` | Identifiant unique de campagne (grouper les résultats) | `smw_newsletter_may2026` |
+| `utm_source` | Source du trafic | `newsletter`, `linkedin`, `website` |
+| `utm_medium` | Type de lien | `email`, `cpc`, `social` |
+| `utm_campaign` | Campagne ou promotion | `spring_launch`, `v1_release` |
+| `utm_term` | Mots-clés payants ciblés | `semantic-wiki` |
+| `utm_content` | Élément cliqué (A/B testing) | `header_button`, `cta_banner` |
+
+Exemple d'URL trackée vers le listing SMW :
+```
+https://azuremarketplace.microsoft.com/en-US/marketplace/apps/cotechnoe.smw-knowledge-base
+  ?ocid=smw_newsletter&utm_source=newsletter&utm_medium=email&utm_campaign=spring_launch
+```
+
+Résultats consultables dans l'[Insights workspace](https://partner.microsoft.com/dashboard/insights/analytics/overview) et le [Referrals workspace](https://partner.microsoft.com/dashboard/v2/referrals/v3/leads/marketplace) de Partner Center.
+
+---
+
 ## 🗺️ Processus de Publication VM — Vue Canonique
 
 > Source : Mastering the Marketplace, module 1 + Microsoft Learn `/marketplace-virtual-machines`
@@ -219,6 +275,12 @@ Les sources ci-dessous sont les références faisant foi. Elles priment sur tout
 | **Preview Audience** | Liste d'abonnements Azure autorisés à voir l'offre avant publication | Beta testers |
 | **Commercial Marketplace** | Programme Partner Center permettant de publier des offres transactables | AppSource |
 | **AMAT** | Azure Marketplace Assessment Tool — outil de test local avant certification | Pester, InSpec |
+| **GTM Toolkit** | Collection officielle Microsoft de ressources post-publication (badges, social assets, pitch deck) — à accéder via `aka.ms/marketplacegtmltoolkit` | Matériaux marketing personnalisés |
+| **OCID** | Identifiant de campagne Marketplace — paramètre query `?ocid=` à ajouter aux liens vers le listing pour tracer l'origine du trafic | UTM campaign ID |
+| **UTM parameters** | Tags `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content` — standards Google Analytics pour mesurer l'efficacité des campagnes marketing | OCID (complémentaires, non substituts) |
+| **Marketplace Insights** | Dashboard Partner Center mesurant le trafic, les conversions et l'engagement sur le listing — URL : `partner.microsoft.com/dashboard/insights/analytics/overview` | Azure Monitor |
+| **Co-branded assets** | Visuels LinkedIn/Twitter/Facebook co-brandés Microsoft+Partner fournis dans le GTM Toolkit — à utiliser pour promouvoir la disponibilité sur Marketplace | Assets génériques |
+| **Available on Marketplace badge** | Badge officiel PNG/SVG certifié Microsoft — doit remplacer tout logo maison pour promouvoir la disponibilité sur Marketplace | Logo créé par l'éditeur |
 
 ---
 
@@ -256,6 +318,9 @@ s'appliquent spécifiquement au domaine Marketplace :
 | Contrat éditeur Microsoft | <https://learn.microsoft.com/fr-fr/legal/marketplace/msft-publisher-agreement> | Obligations légales éditeur |
 | Disponibilité géographique et devises | `/marketplace-geo-availability-currencies` | Marchés disponibles |
 | Guide API Marketplace | `/marketplace-apis-guide` | Automatisation via API |
+| **GTM Best Practices** | <https://learn.microsoft.com/en-us/partner-center/marketplace-offers/gtm-best-practices> | Marketing listing, campaign tracking, listing best practices |
+| **GTM Toolkit** | <https://partner.microsoft.com/en-US/asset/collection/microsoft-marketplace-gtm-toolkit#/> | Badges, co-branded assets, pitch deck, lead management |
+| **Best Practices Guide (PDF)** | <https://aka.ms/marketplacebestpracticesguide> | Guide complet marketing et engagement client |
 
 ---
 

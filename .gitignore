@@ -44,3 +44,7 @@ tests/package-lock.json
 # ---------------------------------------------------------------------------
 tests/e2e/test-results/
 tests/e2e/playwright-report/
+
+# Credentials smoke tests — ne pas committer (voir env.example)
+# ---------------------------------------------------------------------------
+tests/user-smoke/env

@@ -406,7 +406,9 @@ Offer Name : SMW Knowledge Base
 | **Logo Small** | 48×48 px PNG |
 | **Logo Medium** | 90×90 px PNG |
 | **Logo Large** | 216×216 à 350×350 px PNG (**obligatoire**) |
-| **Screenshots** | Max 5, résolution **1280×720 px PNG** (MediaWiki UI, page sémantique, SMW Special:Browse) |
+| **Screenshots** | Max 5, résolution **1280×720 px PNG** (MediaWiki UI, page sémantique, SMW Special:Browse) — inclure les mots-clés dans les noms de fichiers |
+| **Vidéo** | 60-90 secondes — le **client** comme héros (adresser les défis principaux) — inclure les mots-clés dans le titre de la vidéo |
+| **Documents** | PDF uniquement (livres blancs, guides, présentations) — ajouter l'URL de landing page avec UTM params |
 | **Catégories** | "Analytics" (primaire), "Developer Tools" (secondaire) |
 | **Industries** | "Education", "Research", "Government" |
 | **Support URL** | GitHub Issues ou site support |
@@ -429,7 +431,7 @@ Configurer une destination de leads dans Partner Center :
 ```
 Offer: smw-knowledge-base
  └── Plan: standard
-       ├── Plan name: SMW Knowledge Base — Standard
+       ├── Plan name: Semantic MediaWiki Standard
        ├── Modèle: Usage-based — Per vCPU
        ├── Prix: $0.07 USD / vCPU / heure
        ├── Essai gratuit: 1 mois (optionnel, recommandé pour adoption)
@@ -581,11 +583,100 @@ LEADS_TABLE_NAME="MarketplaceLeads"
 
 ---
 
-## 📝 Notes & Historique
+## � Décision 9 : Stratégie GTM Post-Publication
+
+> **Source** : [GTM Best Practices](https://learn.microsoft.com/en-us/partner-center/marketplace-offers/gtm-best-practices) et [Microsoft Marketplace GTM Toolkit](https://partner.microsoft.com/en-US/asset/collection/microsoft-marketplace-gtm-toolkit#/)
+
+La certification et la publication live ne sont que la **première étape**. La visibilité dans le Marketplace exige une stratégie active de promotion post-publication.
+
+### 9.1 — Optimisation du Listing
+
+**Décision** : Le listing doit respecter les recommandations Microsoft en matière de présentation avant tout "Go Live".
+
+| Élément | Règle SMW | Source |
+|---------|-----------|--------|
+| **Titre** | "Semantic MediaWiki — Knowledge Base on Azure" — inclure les termes de recherche (wiki, knowledge base, semantic) | GTM best practices |
+| **Description** | Commencer par la proposition de valeur (2 premières phrases = extraits de recherche) | GTM best practices |
+| **Logo app details** | PNG 216×216 à 350×350 px (obligatoire) | GTM best practices |
+| **Logo search** | 48×48 px PNG — généré automatiquement par Partner Center depuis le grand logo | GTM best practices |
+| **Screenshots** | Max 5 × 1280×720 px PNG — noms de fichiers incluant des mots-clés (`smw-browse-ontology.png`) | GTM best practices |
+| **Vidéo** | 60-90 secondes — le **client** comme héros (pas l'éditeur), adresser les problèmes/objectifs principaux | GTM best practices |
+| **Documents "Learn more"** | Format PDF (livres blancs, guides d'usage) — éduquer, ne pas vendre ; ajouter URL landing page + UTM params | GTM best practices |
+
+> ⚠️ Les champs `Logo Small (48×48)` et `Logo Medium (90×90)` ne doivent **pas** avoir de fond transparent. Utiliser fond blanc ou couleur de marque.
+
+### 9.2 — GTM Toolkit : Assets Post-Publication
+
+Après le premier "Go Live", utiliser les ressources officielles Microsoft pour promouvoir la disponibilité de l'offre :
+
+| Asset | Usage | Téléchargement |
+|-------|-------|---------------|
+| **Available on Microsoft Marketplace badge** | Ajouter sur README.md, site web, emails | [badges.zip](https://assetsprod.microsoft.com/mpn/en-us/available-on-microsoft-marketplace-badges.zip) |
+| **Co-branded social assets** | Posts LinkedIn/Twitter annonçant la disponibilité | [social-assets.zip](https://assetsprod.microsoft.com/mpn/en-us/microsoft-marketplace-co-branded-social-assets.zip) |
+| **Co-branded pitch deck** | Présentation partenaires pour achat via Marketplace | [pitchdeck.pptx](https://assetsprod.microsoft.com/mpn/en-us/microsoft-marketplace-cobranded-pitchdeck.pptx) |
+| **AI listing optimization** | Analyse et suggestions d'amélioration du listing | [App Advisor](https://www.microsoft.com/en-us/software-development-companies/app-advisor/guidance/my-results?stage=grow&step=optimize-your-listing-with-personalized-recommendations) |
+
+**Règle Trademark** : Utiliser uniquement les badges officiels Microsoft pour mentionner la disponibilité sur Marketplace. Respecter les [Microsoft Trademark and Brand Guidelines](https://www.microsoft.com/legal/intellectualproperty/trademarks/usage/general.aspx).
+
+### 9.3 — Campaign Tracking (OCID + UTM)
+
+Tout lien vers le listing Marketplace doit inclure des paramètres de suivi pour mesurer l'efficacité des campagnes :
+
+```
+https://azuremarketplace.microsoft.com/en-US/marketplace/apps/cotechnoe.smw-knowledge-base
+  ?ocid=<campaign_id>&utm_source=<source>&utm_medium=<medium>&utm_campaign=<campaign>
+```
+
+| Paramètre | Obligatoire | Exemple SMW |
+|-----------|-------------|-------------|
+| `ocid` | ✅ Recommandé | `smw_newsletter_v1`, `smw_github_readme` |
+| `utm_source` | ✅ Recommandé | `newsletter`, `linkedin`, `github`, `website` |
+| `utm_medium` | ✅ Recommandé | `email`, `social`, `referral`, `cpc` |
+| `utm_campaign` | ✅ Recommandé | `v1_launch`, `spring2026`, `partner_promo` |
+| `utm_content` | Optionnel | `badge_readme`, `cta_hero`, `footer_link` |
+| `utm_term` | Optionnel (payant) | `semantic-mediawiki-azure` |
+
+**Suivi des résultats :**
+- Trafic et conversions : [Insights workspace](https://partner.microsoft.com/dashboard/insights/analytics/overview)
+- Leads avec tags campagne : [Referrals workspace](https://partner.microsoft.com/dashboard/v2/referrals/v3/leads/marketplace)
+
+### 9.4 — Gestion des Leads
+
+**Décision** : Configurer une destination de leads **avant** le premier "Go Live" — les leads générés pendant la période de preview sont perdus si aucune destination n'est configurée.
+
+| Option | Complexité | Recommandation |
+|--------|-----------|----------------|
+| **Azure Table Storage** | Faible | ✅ Prioritaire pour SMW (storage account déjà dans `env/`) |
+| HTTPS Endpoint (Azure Function) | Moyenne | Alternative si intégration CRM requise |
+| CRM direct (Dynamics, Salesforce) | Élevée | À évaluer en phase de croissance |
+
+**Référence** : [Lead management guidance](https://learn.microsoft.com/en-us/partner-center/marketplace-offers/commercial-marketplace-get-customer-leads)
+
+### 9.5 — Checklist GTM
+
+À compléter avant et après chaque publication d'une nouvelle version :
+
+**Avant Go Live :**
+- [ ] Logo 216×216–350×350 px PNG validé (fond non transparent)
+- [ ] Screenshots 1280×720 px, noms de fichiers avec mots-clés
+- [ ] Description avec proposition de valeur dans les 2 premières phrases
+- [ ] Destination leads configurée (Azure Table Storage)
+- [ ] Support URL testée depuis un navigateur incognito
+
+**Après Go Live (dans les 7 jours) :**
+- [ ] Badge "Available on Microsoft Marketplace" ajouté au README.md du dépôt docs
+- [ ] Post LinkedIn avec co-branded social asset
+- [ ] URL de listing avec paramètres OCID/UTM dans tous les liens marketing
+- [ ] Dashboard Insights validé (au moins 1 visite trackée après partage)
+
+---
+
+## �📝 Notes & Historique
 
 | Date | Auteur | Changement | Raison |
 |------|--------|------------|--------|
 | 2026-04-16 | @dev-team | Création ADR-800 | Formalisation bonnes pratiques Microsoft Marketplace pour SMW (sources: learn.microsoft.com) |
+| 2026-06-xx | @dev-team | Ajout Décision 9 GTM | Intégration recommandations officielles Microsoft GTM best practices et GTM Toolkit |
 
 **Référence Certification Policies** : Version 1.67 (August 26, 2024) — https://learn.microsoft.com/en-us/legal/marketplace/certification-policies
 

@@ -12,8 +12,8 @@
 #
 # Variables d'environnement :
 #   VM_IP              — IP ou FQDN de la VM cible (auto-détecté depuis Azure si absent)
-#   SMW_ADMIN_USER     — Utilisateur admin MediaWiki (défaut : WikiAdmin)
-#   SMW_ADMIN_PASSWORD — Mot de passe admin MediaWiki (défaut : ChangeMe123!)
+#   SMW_ADMIN_USER     — Chargé depuis tests/user-smoke/env (voir env.example)
+#   SMW_ADMIN_PASSWORD — Chargé depuis tests/user-smoke/env (voir env.example)
 #
 # Dépendances npm : gérer depuis tests/ avec `make -C tests install`
 # =============================================================================
@@ -45,7 +45,7 @@ endef
 
 smoke: ## Lancer les smoke tests utilisateur SMW (VM_IP=<ip|fqdn> si différent du défaut)
 	$(call log_action,Smoke tests utilisateur SMW — https://$(VM_IP)/wiki/Special:Ask ...)
-	@VM_IP=$(VM_IP) $(CURDIR)/../node_modules/.bin/playwright test \
+	@set -a; . $(CURDIR)/env; set +a; VM_IP=$(VM_IP) $(CURDIR)/../node_modules/.bin/playwright test \
 		--config $(CURDIR)/playwright.config.js \
 		--project firefox
 

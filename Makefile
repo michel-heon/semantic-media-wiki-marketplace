@@ -245,6 +245,14 @@ marketplace-test: ## Exécuter un test CTT spécifique (TEST=nom VM=vm_name)
 marketplace-tests: ## Lister les tests CTT disponibles
 	@bash $(CTT) list
 
+.PHONY: marketplace-gallery-permissions
+marketplace-gallery-permissions: ## Configurer les permissions ACG pour Partner Center (ADR-800 Décision 1)
+	$(call log_action,Configuration des permissions Azure Compute Gallery pour Partner Center...)
+	@GALLERY_NAME=$(GALLERY_NAME) \
+	    GALLERY_RESOURCE_GROUP=$(GALLERY_RESOURCE_GROUP) \
+	    bash packer/scripts/marketplace-gallery-permissions.sh
+	$(call log_success,Permissions gallery configurées — Partner Center peut accéder à la gallery)
+
 ##@ Tests Frontend
 
 .PHONY: frontend-test-login-ui

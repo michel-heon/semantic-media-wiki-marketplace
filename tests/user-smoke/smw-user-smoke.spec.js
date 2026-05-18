@@ -17,11 +17,10 @@ const { test, expect } = require('@playwright/test');
 
 // ---------------------------------------------------------------------------
 // Constantes — credentials et données de test
-// Les credentials correspondent aux valeurs par défaut du firstboot (ADR-613)
-// Surchargeable via variables d'environnement pour les environnements non-dev
+// Chargées depuis tests/user-smoke/env (voir env.example)
 // ---------------------------------------------------------------------------
-const ADMIN_USER  = process.env.SMW_ADMIN_USER     || 'WikiAdmin';
-const ADMIN_PASS  = process.env.SMW_ADMIN_PASSWORD || 'ChangeMe123!';
+const ADMIN_USER  = process.env.SMW_ADMIN_USER;
+const ADMIN_PASS  = process.env.SMW_ADMIN_PASSWORD;
 const TEST_PAGE   = 'SMW_Smoke_Test';
 const TEST_PROP   = 'Has population';
 const TEST_VALUE  = '42000';

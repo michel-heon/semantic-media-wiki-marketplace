@@ -46,6 +46,9 @@ effort: "medium"
 - [VM offer listing best practices](https://learn.microsoft.com/en-us/partner-center/marketplace-offers/marketplace-offer-best-practices)
 - [Plan a VM offer — support URLs](https://learn.microsoft.com/en-us/partner-center/marketplace-offers/marketplace-virtual-machines#customer-support)
 - [Microsoft Writing Style Guide](https://learn.microsoft.com/en-us/style-guide/welcome/)
+- [GTM Best Practices — Offer Listing & Campaign Tracking](https://learn.microsoft.com/en-us/partner-center/marketplace-offers/gtm-best-practices)
+- [Microsoft Marketplace GTM Toolkit (badges, co-branded assets, pitch deck)](https://partner.microsoft.com/en-US/asset/collection/microsoft-marketplace-gtm-toolkit#/)
+- [Marketplace Best Practices Guide (PDF)](https://aka.ms/marketplacebestpracticesguide)
 
 ---
 
@@ -192,6 +195,50 @@ Les seules références externes autorisées :
 
 ---
 
+### Règle 7 — Campaign Tracking : Paramètres UTM dans les Liens vers le Listing
+
+**Principe** : Tout lien vers le listing Azure Marketplace **inclus dans la documentation** (README, pages wiki, emails de support) doit intégrer des paramètres de suivi.
+
+**Raison** : Microsoft Marketplace fournit un dashboard [Insights](https://partner.microsoft.com/dashboard/insights/analytics/overview) qui trace le trafic entrant uniquement si les paramètres sont présents.
+
+**Format canonique du lien tracké :**
+
+```
+https://azuremarketplace.microsoft.com/en-US/marketplace/apps/cotechnoe.smw-knowledge-base
+  ?ocid=<id>&utm_source=<source>&utm_medium=<medium>&utm_campaign=<campaign>
+```
+
+**Tableau des paramètres obligatoires par contexte :**
+
+| Contexte | `ocid` | `utm_source` | `utm_medium` | `utm_campaign` |
+|----------|--------|-------------|-------------|---------------|
+| Badge README.md (GitHub) | `smw_github_readme` | `github` | `referral` | `docs` |
+| Page wiki Home.md | `smw_wiki_home` | `wiki` | `referral` | `docs` |
+| Email support | `smw_support_email` | `email` | `email` | `support` |
+| Post LinkedIn | `smw_linkedin_launch` | `linkedin` | `social` | `v1_launch` |
+
+> **Règle** : Les pages wiki EN et FR doivent partager le **même** `ocid` — ne pas créer un ID par langue.
+
+---
+
+### Règle 8 — Assets Marketing Post-Publication (GTM Toolkit)
+
+**Principe** : Utiliser **exclusivement** les ressources officielles du [GTM Toolkit Microsoft](https://partner.microsoft.com/en-US/asset/collection/microsoft-marketplace-gtm-toolkit#/) pour promouvoir la disponibilité de l'offre sur Marketplace.
+
+**Assets à déployer après le premier Go Live :**
+
+| Asset | Emplacement cible | Règle |
+|-------|------------------|-------|
+| **Badge "Available on Microsoft Marketplace"** | `README.md` du dépôt `Cotechnoe/server-azure-marketplace-docs` | Obligatoire — utiliser le badge officiel, pas un badge custom |
+| **Co-branded social assets** | Posts LinkedIn lors du lancement ou d'une mise à jour majeure | Uniquement les visuels du GTM Toolkit (pas d'assets non co-brandés) |
+| **Co-branded pitch deck** | À fournir à des partenaires ou lors de démonstrations institutionnelles | Personnaliser uniquement les zones dédiées partenaire |
+
+**Règle Trademark** : Respecter les [Microsoft Trademark and Brand Guidelines](https://www.microsoft.com/legal/intellectualproperty/trademarks/usage/general.aspx) pour tout contenu co-brandé. Ne jamais modifier les logos Microsoft dans les assets.
+
+**AI listing optimization** : Avant chaque publication d'une nouvelle version, utiliser l'outil [App Advisor](https://www.microsoft.com/en-us/software-development-companies/app-advisor/guidance/my-results?stage=grow&step=optimize-your-listing-with-personalized-recommendations) pour générer des recommandations personnalisées d'amélioration du listing.
+
+---
+
 ## 📁 Rôle des Dépôts
 
 ### `Cotechnoe/server-azure-marketplace-docs`
@@ -255,6 +302,8 @@ Référencé dans Partner Center comme **Support URL** (obligatoire, vérifié l
 - [ ] Aucune commande de build Packer ou make dans les pages wiki
 - [ ] Support URL vérifiée accessible depuis un navigateur incognito
 - [ ] `Support.md` contient l'email publisher actuel
+- [ ] Badge "Available on Microsoft Marketplace" présent dans `README.md` (asset officiel GTM Toolkit)
+- [ ] Liens vers le listing Marketplace incluant les paramètres OCID et UTM (Règle 7)
 
 **Traductions françaises :**
 - [ ] Chaque page anglaise modifiée depuis la dernière publication a sa version `-fr` mise à jour
@@ -278,6 +327,8 @@ Ces contenus ont été observés ou sont à risque dans des itérations précéd
 | Rédiger la page FR avant la page EN | Inversion de la langue canonique | Toujours finaliser EN en premier, puis générer FR |
 | Page FR divergeant de EN (sections manquantes) | Confiance réduite pour les francophones | Synchroniser FR dès que EN est modifié |
 | Page wiki vide ou avec TODO | Mauvaise expérience utilisateur | Ne pas publier une page incomplète |
+| Liens vers le listing Marketplace sans OCID/UTM | Trafic non traçable dans le dashboard Insights | Ajouter `?ocid=...&utm_source=...` à tous les liens |
+| Utiliser un badge custom "Available on Azure Marketplace" | Violation des Trademark Guidelines Microsoft | Utiliser uniquement les badges officiels du GTM Toolkit |
 
 ---
 
