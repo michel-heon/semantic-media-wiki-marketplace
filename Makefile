@@ -311,12 +311,12 @@ e2e-browser-install: ## Installer les dépendances npm + navigateur Firefox (Pla
 	@$(MAKE) -C tests install --no-print-directory
 
 .PHONY: e2e-browser
-e2e-browser: ## Tests navigateur Firefox — page principale SMW (VM_IP=<ip>)
-	@$(MAKE) -C tests/e2e firefox VM_IP=$(VM_IP) --no-print-directory
+e2e-browser: ## Tests navigateur Firefox — page principale SMW (VM_IP auto depuis Azure)
+	@$(MAKE) -C tests/e2e firefox $(if $(VM_IP),VM_IP=$(VM_IP)) --no-print-directory
 
 .PHONY: user-smoke
-user-smoke: ## Smoke tests utilisateur SMW — Special:Ask, Browse, annotations, API (VM_IP=<ip>)
-	@$(MAKE) -C tests/user-smoke smoke VM_IP=$(VM_IP) --no-print-directory
+user-smoke: ## Smoke tests utilisateur SMW — Special:Ask, Browse, annotations, API (VM_IP auto depuis Azure)
+	@$(MAKE) -C tests/user-smoke smoke $(if $(VM_IP),VM_IP=$(VM_IP)) --no-print-directory
 
 ##@ Maintenance
 

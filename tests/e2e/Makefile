@@ -11,14 +11,16 @@
 #   make vm-e2e-status     — Afficher l'état, l'IP et l'URL de la VM de test E2E
 #
 # Usage depuis la racine :
-#   make e2e-browser VM_IP=20.48.144.74
+#   make e2e-browser                     ← VM_IP auto-détecté depuis Azure (E2E_RG)
+#   make e2e-browser VM_IP=20.48.144.74  ← forcer une IP spécifique
 #
 # Dépendances npm : gérer depuis tests/ avec `make -C tests install`
 # =============================================================================
 
-VM_IP     ?= 20.48.144.74
 E2E_RG    ?= rg-smw-marketplace-e2e
 REPO_ROOT := $(CURDIR)/../..
+VM_MANAGE := $(REPO_ROOT)/packer/scripts/vm-manage.sh
+VM_IP     ?= $(shell E2E_RG=$(E2E_RG) bash $(VM_MANAGE) get-ip 2>/dev/null)
 BUILD_DATE := $(shell date +%Y%m%d)
 VM_MANAGE := $(REPO_ROOT)/packer/scripts/vm-manage.sh
 

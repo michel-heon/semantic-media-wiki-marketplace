@@ -6,20 +6,22 @@
 #   make smoke             — Lancer les smoke tests (VM_IP=<ip|fqdn> optionnel)
 #
 # Usage depuis la racine :
-#   make user-smoke VM_IP=20.48.144.74
+#   make user-smoke                     ← VM_IP auto-détecté depuis Azure (E2E_RG)
+#   make user-smoke VM_IP=20.48.144.74  ← forcer une IP spécifique
 #   make user-smoke VM_IP=smw-test-20260518.canadacentral.cloudapp.azure.com
 #
 # Variables d'environnement :
-#   VM_IP              — IP ou FQDN de la VM cible (défaut : 20.48.144.74)
+#   VM_IP              — IP ou FQDN de la VM cible (auto-détecté depuis Azure si absent)
 #   SMW_ADMIN_USER     — Utilisateur admin MediaWiki (défaut : WikiAdmin)
 #   SMW_ADMIN_PASSWORD — Mot de passe admin MediaWiki (défaut : ChangeMe123!)
 #
 # Dépendances npm : gérer depuis tests/ avec `make -C tests install`
 # =============================================================================
 
-VM_IP     ?= 20.48.144.74
 E2E_RG    ?= rg-smw-marketplace-e2e
 REPO_ROOT := $(CURDIR)/../..
+VM_MANAGE := $(REPO_ROOT)/packer/scripts/vm-manage.sh
+VM_IP     ?= $(shell E2E_RG=$(E2E_RG) bash $(VM_MANAGE) get-ip 2>/dev/null)
 
 # ---------------------------------------------------------------------------
 # Couleurs (ADR-611)
