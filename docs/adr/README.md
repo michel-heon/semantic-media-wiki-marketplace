@@ -68,6 +68,7 @@ git commit -m "docs(adr): ADR-201 [INFRA] Nouvelle décision"
 |-----|-------|--------|------|---------|
 | [300](./300-SEC-securite-hardening-vm-certification.md) | Sécurité VM — Hardening OS Ubuntu pour Certification Azure Marketplace | ✅ Accepté | 2026-02-22 | Sécurité |
 | [302](./302-SEC-sso-microsoft-entra-id.md) | Authentification SSO via Microsoft Entra ID | ✅ Accepté | 2025-07-12 | Sécurité |
+| [303](./303-SEC-rbac-permissions-partner-center-gallery.md) | Permissions RBAC Azure Compute Gallery pour Partner Center — Visibilité Images VM | ✅ Accepté | 2026-05-19 | Sécurité |
 
 ---
 
@@ -131,12 +132,12 @@ git commit -m "docs(adr): ADR-201 [INFRA] Nouvelle décision"
 
 | Indicateur | Valeur |
 |-----------|--------|
-| **Total ADRs** | 21 |
-| **Acceptés** | 21 |
+| **Total ADRs** | 22 |
+| **Acceptés** | 22 |
 | **Dépréciés** | 0 |
 | **Proposés** | 0 |
 | **Brouillons** | 0 |
-| **Par Domaine** | META: 3, INFRA: 1, SEC: 2, DEVOPS: 13, BIZ: 2 |
+| **Par Domaine** | META: 3, INFRA: 1, SEC: 3, DEVOPS: 13, BIZ: 2 |
 
 ---
 
@@ -147,7 +148,7 @@ git commit -m "docs(adr): ADR-201 [INFRA] Nouvelle décision"
 | `META` | 000-099 | Méta-processus | 003 |
 | `ARCH` | 100-199 | Architecture SMW/MediaWiki | 100 |
 | `INFRA` | 200-299 | Azure VM, Packer, IaC | 201 |
-| `SEC` | 300-399 | TLS, NSG, conformité Marketplace | 303 |
+| `SEC` | 300-399 | TLS, NSG, conformité Marketplace | 304 |
 | `DATA` | 400-499 | Données sémantiques, propriétés SMW, ontologies | 400 |
 | `API` | 500-599 | API MediaWiki, intégrations | 500 |
 | `DEVOPS` | 600-699 | CI/CD, scripts provisioning | 618 |
