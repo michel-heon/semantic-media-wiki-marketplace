@@ -233,7 +233,87 @@ provisioner "shell" {
   execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo '{{ .Path }}'"
 }
 ```
+### SecurityType Azure Compute Gallery — Exigence TrustedLaunch
 
+> ⚠️ **Exigence critique pour la visibilité dans Partner Center.**
+> Partner Center ne liste dans son dropdown "Gallery image" que les image definitions
+> ayant `SecurityType = TrustedLaunch`. Une definition avec `TrustedLaunchSupported`
+> est **silencieusement absente** du dropdown.
+
+#### Problème rencontré (2026-05-17)
+
+La gallery `galSMWMarketplace` était initialement créée avec l'image definition
+`smw-knowledge-base` configurée en `SecurityType = TrustedLaunchSupported`.
+Cette valeur est le défaut de la commande `az sig image-definition create` lorsque
+le paramètre `--features` n'est pas spécifié.
+
+**Symptôme** : `galSMWMarketplace / smw-knowledge-base` était invisible dans le
+dropdown "Gallery image" du Partner Center Technical Configuration, alors que
+`galDSpaceMarketplace` (configurée en `TrustedLaunch`) apparaissait normalement.
+
+| Gallery | SecurityType | Visible Partner Center |
+|---------|-------------|----------------------|
+| `galDSpaceMarketplace` | `TrustedLaunch` | ✅ OUI |
+| `galSMWMarketplace` (avant fix) | `TrustedLaunchSupported` | ❌ NON |
+| `galSMWMarketplace` (après fix) | `TrustedLaunch` | ✅ OUI |
+
+#### Fix exécuté (2026-05-17)
+
+La correction a nécessité la suppression complète de l'image definition et de toutes
+ses versions, puis leur recréation avec `--features "SecurityType=TrustedLaunch"` :
+
+```bash
+# 1. Supprimer toutes les versions (6.0.20260511, 6.0.20260512, 6.0.20260514, 6.0.20260517)
+az sig image-version delete --resource-group rg-smw-marketplace \
+  --gallery-name galSMWMarketplace --gallery-image-definition smw-knowledge-base \
+  --gallery-image-version <version>
+
+# 2. Supprimer l'image definition (TrustedLaunchSupported)
+az sig image-definition delete --resource-group rg-smw-marketplace \
+  --gallery-name galSMWMarketplace --gallery-image-definition smw-knowledge-base
+
+# 3. Recréer avec SecurityType=TrustedLaunch (OBLIGATOIRE)
+az sig image-definition create \
+  --resource-group rg-smw-marketplace \
+  --gallery-name galSMWMarketplace \
+  --gallery-image-definition smw-knowledge-base \
+  --publisher cotechnoe --offer smw-knowledge-base --sku standard \
+  --os-type Linux --hyper-v-generation V2 \
+  --features "SecurityType=TrustedLaunch"
+
+# 4. Recréer la version depuis la managed image intermédiaire
+az sig image-version create \
+  --resource-group rg-smw-marketplace \
+  --gallery-name galSMWMarketplace \
+  --gallery-image-definition smw-knowledge-base \
+  --gallery-image-version 6.0.20260517 \
+  --managed-image "...tmp-smw-knowledge-base-6.0.1-20260517" \
+  --target-regions canadacentral
+```
+
+**Vérification finale** :
+```bash
+az sig image-definition list \
+  --resource-group rg-smw-marketplace \
+  --gallery-name galSMWMarketplace \
+  --query "[].{Name:name, SecurityType:features[?name=='SecurityType'].value|[0], HyperVGen:hyperVGeneration, State:provisioningState}" \
+  -o table
+# Résultat : smw-knowledge-base | TrustedLaunch | V2 | Succeeded ✅
+```
+
+#### Prévention des régressions
+
+| Action | Prévention |
+|--------|-----------|
+| **Nouveau build Packer** | L'image definition est pré-existante — aucune action requise si non recréée |
+| **Recréation de la gallery** | Exécuter `make marketplace-gallery-permissions` + recréer la definition avec `--features "SecurityType=TrustedLaunch"` |
+| **Nouveau projet / nouvelle gallery** | Toujours passer `--features "SecurityType=TrustedLaunch"` à `az sig image-definition create` |
+| **Vérification** | `az sig image-definition list ... --query "features[?name=='SecurityType'].value"` doit retourner `TrustedLaunch` |
+
+> **Note Packer** : Le `SecurityType` de l'image definition n'est pas configurable dans
+> `packer/smw-vm.pkr.hcl` — il est fixé à la création de la definition. Le bloc
+> `shared_image_gallery_destination` ne contient pas ce paramètre. Voir
+> `packer/smw-vm.pkr.hcl` pour le commentaire de prérequis.
 ---
 
 ## 🔒 Décision 3 : Conformité Sécurité (Tests de Certification Linux)
@@ -676,6 +756,7 @@ https://azuremarketplace.microsoft.com/en-US/marketplace/apps/cotechnoe.smw-know
 | Date | Auteur | Changement | Raison |
 |------|--------|------------|--------|
 | 2026-04-16 | @dev-team | Création ADR-800 | Formalisation bonnes pratiques Microsoft Marketplace pour SMW (sources: learn.microsoft.com) |
+| 2026-05-17 | @dev-team | Ajout Décision 2 — SecurityType TrustedLaunch | Fix image definition `galSMWMarketplace` invisible dans Partner Center (TrustedLaunchSupported → TrustedLaunch) |
 | 2026-06-xx | @dev-team | Ajout Décision 9 GTM | Intégration recommandations officielles Microsoft GTM best practices et GTM Toolkit |
 
 **Référence Certification Policies** : Version 1.67 (August 26, 2024) — https://learn.microsoft.com/en-us/legal/marketplace/certification-policies

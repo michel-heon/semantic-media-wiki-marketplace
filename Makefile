@@ -253,6 +253,20 @@ marketplace-gallery-permissions: ## Configurer les permissions ACG pour Partner 
 	    bash packer/scripts/marketplace-gallery-permissions.sh
 	$(call log_success,Permissions gallery configurées — Partner Center peut accéder à la gallery)
 
+.PHONY: marketplace-gallery-recreate
+marketplace-gallery-recreate: ## Recréer l'image definition avec publisher=GALLERY_IMAGE_PUBLISHER (fix dropdown Partner Center)
+	$(call log_action,Recréation de l'image definition $(GALLERY_IMAGE_NAME) avec publisher=$(GALLERY_IMAGE_PUBLISHER)...)
+	@GALLERY_NAME=$(GALLERY_NAME) \
+	    GALLERY_RESOURCE_GROUP=$(GALLERY_RESOURCE_GROUP) \
+	    GALLERY_IMAGE_NAME=$(GALLERY_IMAGE_NAME) \
+	    GALLERY_IMAGE_PUBLISHER=$(GALLERY_IMAGE_PUBLISHER) \
+	    AZURE_SUBSCRIPTION_ID=$(AZURE_SUBSCRIPTION_ID) \
+	    AZURE_LOCATION=$(AZURE_LOCATION) \
+	    SMW_VERSION=$(SMW_VERSION) \
+	    bash packer/scripts/marketplace-gallery-recreate.sh
+	$(MAKE) marketplace-gallery-permissions
+	$(call log_success,Image definition recréée — vérifier le dropdown $(GALLERY_NAME) / $(GALLERY_IMAGE_NAME) dans Partner Center)
+
 ##@ Tests Frontend
 
 .PHONY: frontend-test-login-ui

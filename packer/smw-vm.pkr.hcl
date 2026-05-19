@@ -64,12 +64,20 @@ source "azure-arm" "smw" {
   location  = var.azure_location
 
   # Destination — Azure Compute Gallery (ADR-617, US-01.3, US-01.5)
+  # PRÉREQUIS : l'image definition doit pré-exister avec SecurityType=TrustedLaunch.
+  # Partner Center n'affiche que les definitions avec SecurityType=TrustedLaunch (pas TrustedLaunchSupported).
+  # Si l'image definition est absente ou recréée, exécuter :
+  #   make marketplace-gallery-permissions
+  # puis recréer la definition avec :
+  #   az sig image-definition create ... --features "SecurityType=TrustedLaunch"
+  # Voir ADR-800 Décision 2 pour la procédure complète.
   shared_image_gallery_destination {
-    resource_group      = var.gallery_resource_group
-    gallery_name        = var.gallery_name
-    image_name          = var.gallery_image_name
-    image_version       = local.image_version
-    replication_regions = [var.azure_location]
+    resource_group       = var.gallery_resource_group
+    gallery_name         = var.gallery_name
+    image_name           = var.gallery_image_name
+    image_version        = local.image_version
+    replication_regions  = [var.azure_location]
+    storage_account_type = "Standard_LRS"
   }
 
   # Tags de traçabilité

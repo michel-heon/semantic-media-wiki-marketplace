@@ -363,4 +363,96 @@ Description orientée plan uniquement (pas l'offre) — conforme à la directive
 
 ---
 
-<!-- Prochaine étape : Étape 7 — Technical configuration -->
+---
+
+## Étape 7 : Technical configuration
+
+### Question Partner Center
+
+> **Source image** : Select the source image type.
+> **Gallery image** : Select the Azure Compute Gallery and image definition.
+> **Image version** : Select the image version to use.
+
+### Contraintes Microsoft
+
+| Champ | Contraintes |
+|-------|------------|
+| **Source image type** | `Azure Compute Gallery` — requis pour les offres VM publiées via gallery |
+| **Gallery image definition** | Doit avoir `SecurityType = TrustedLaunch` — les definitions avec `TrustedLaunchSupported` n'apparaissent **pas** dans le dropdown |
+| **Image version** | Version Packer publiée, au format `major.minor.YYYYMMDD` (`provisioningState = Succeeded` requis) |
+
+### Problème rencontré : image definition absente du dropdown
+
+> **Symptôme** : `galSMWMarketplace / smw-knowledge-base` n'apparaissait pas dans le
+> dropdown "Gallery image" du Partner Center Technical Configuration.
+>
+> **Cause** : l'image definition avait été créée avec `SecurityType = TrustedLaunchSupported`
+> au lieu de `SecurityType = TrustedLaunch`. Partner Center filtre strictement —
+> seules les definitions avec `TrustedLaunch` sont visibles.
+
+**Comparaison DSpace vs SMW (avant fix) :**
+
+| Gallery | SecurityType | Visible dropdown |
+|---------|-------------|-----------------|
+| `galDSpaceMarketplace` | `TrustedLaunch` | ✅ OUI |
+| `galSMWMarketplace` (avant fix) | `TrustedLaunchSupported` | ❌ NON |
+| `galSMWMarketplace` (après fix) | `TrustedLaunch` | ✅ OUI |
+
+**Correction exécutée (2026-05-17) :**
+
+```bash
+# 1. Supprimer toutes les versions existantes
+az sig image-version delete --resource-group rg-smw-marketplace \
+  --gallery-name galSMWMarketplace --gallery-image-definition smw-knowledge-base \
+  --gallery-image-version <version>  # répété pour chaque version
+
+# 2. Supprimer l'image definition (TrustedLaunchSupported)
+az sig image-definition delete --resource-group rg-smw-marketplace \
+  --gallery-name galSMWMarketplace --gallery-image-definition smw-knowledge-base
+
+# 3. Recréer avec SecurityType=TrustedLaunch
+az sig image-definition create \
+  --resource-group rg-smw-marketplace \
+  --gallery-name galSMWMarketplace \
+  --gallery-image-definition smw-knowledge-base \
+  --publisher cotechnoe --offer smw-knowledge-base --sku standard \
+  --os-type Linux --hyper-v-generation V2 \
+  --features "SecurityType=TrustedLaunch"
+
+# 4. Recréer la version depuis la managed image
+az sig image-version create \
+  --resource-group rg-smw-marketplace \
+  --gallery-name galSMWMarketplace \
+  --gallery-image-definition smw-knowledge-base \
+  --gallery-image-version 6.0.20260517 \
+  --managed-image "/subscriptions/ae487cf3-c3af-4376-9ce6-406790b4bece/resourceGroups/rg-smw-marketplace/providers/Microsoft.Compute/images/tmp-smw-knowledge-base-6.0.1-20260517" \
+  --target-regions canadacentral
+```
+
+**Vérification finale :**
+
+```bash
+az sig image-definition list \
+  --resource-group rg-smw-marketplace \
+  --gallery-name galSMWMarketplace \
+  --query "[].{Name:name, SecurityType:features[?name=='SecurityType'].value|[0], HyperVGen:hyperVGeneration, State:provisioningState}" \
+  -o table
+# Résultat : smw-knowledge-base | TrustedLaunch | V2 | Succeeded ✅
+```
+
+### Décision retenue
+
+| Champ | Valeur |
+|-------|--------|
+| **Source image type** | `Azure Compute Gallery` |
+| **Subscription** | `ae487cf3-c3af-4376-9ce6-406790b4bece` (cotechnoe) |
+| **Gallery** | `galSMWMarketplace` (resource group : `rg-smw-marketplace`, région : `Canada Central`) |
+| **Image definition** | `smw-knowledge-base` (`SecurityType = TrustedLaunch`, Gen2, Ubuntu 22.04 LTS) |
+| **Image version** | `6.0.20260517` (`provisioningState = Succeeded`) |
+
+**Sources validées** :
+- Image definition : `az sig image-definition list --resource-group rg-smw-marketplace --gallery-name galSMWMarketplace` — vérifiée le 2026-05-17
+- Version gallery : `az sig image-version list --resource-group rg-smw-marketplace --gallery-name galSMWMarketplace --gallery-image-definition smw-knowledge-base` — `provisioningState = Succeeded`
+- Prévention régression : `packer/smw-vm.pkr.hcl` commentaire + ADR-800 Décision 2
+
+<!-- Prochaine étape : Étape 8 — Preview audience -->
