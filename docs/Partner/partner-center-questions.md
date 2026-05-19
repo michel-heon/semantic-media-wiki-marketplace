@@ -174,6 +174,27 @@ Hardened for production: SSH key-only authentication, UFW firewall (ports 22, 80
 - Stack : `packer/provisioners/` — versions confirmées dans les scripts
 - Privacy policy : `docs/smw6-azure-marketplace-docs/PRIVACY.md` — créé le 2026-05-18, à pousser sur `Cotechnoe/server-azure-marketplace-docs`
 
+### Product information links (≤ 25)
+
+> ⚠️ **Alerte URL** : La privacy policy dans Partner Center pointe vers
+> `https://github.com/Cotechnoe/server-azure-marketplace-docs/…` mais le vrai repo git est
+> `Cotechnoe/smw6-azure-marketplace-docs`. À corriger avant soumission.
+
+| # | Name (affiché dans Partner Center) | Link | Vérifié |
+|---|-------------------------------------|------|---------|
+| 1 | `Documentation` | `https://cotechnoe.github.io/smw6-azure-marketplace-docs/` | ✅ |
+| 2 | `Getting Started Guide` | `https://github.com/Cotechnoe/smw6-azure-marketplace-docs/blob/main/docs/Deploying-from-Marketplace.md` | ✅ |
+| 3 | `Post-Deployment Verification` | `https://github.com/Cotechnoe/smw6-azure-marketplace-docs/blob/main/docs/Post-Deployment-Verification.md` | ✅ |
+| 4 | `Semantic MediaWiki Basics` | `https://github.com/Cotechnoe/smw6-azure-marketplace-docs/blob/main/docs/Semantic-MediaWiki-Basics.md` | ✅ |
+| 5 | `Administration Guide` | `https://github.com/Cotechnoe/smw6-azure-marketplace-docs/blob/main/docs/Administering-the-Wiki.md` | ✅ |
+| 6 | `HTTPS & TLS Certificate Setup` | `https://github.com/Cotechnoe/smw6-azure-marketplace-docs/blob/main/docs/HTTPS-TLS-Certificate.md` | ✅ |
+| 7 | `Troubleshooting` | `https://github.com/Cotechnoe/smw6-azure-marketplace-docs/blob/main/docs/Troubleshooting.md` | ✅ |
+| 8 | `Semantic MediaWiki Official Docs` | `https://www.semantic-mediawiki.org/wiki/Help:Contents` | ✅ |
+| 9 | `MediaWiki Official Documentation` | `https://www.mediawiki.org/wiki/MediaWiki` | ✅ |
+| 10 | `Report an Issue` | `https://github.com/Cotechnoe/smw6-azure-marketplace-docs/issues` | ✅ |
+
+**Décision** : 10 liens vérifiés — accueil GitHub Pages (lien #1), docs individuelles en GitHub blob (liens #2–7, les URLs `github.io/docs/*.md` retournent 404 faute de Jekyll config), documentation officielle SMW + MediaWiki, support GitHub Issues.
+
 ---
 
 ## Étape 4 — Plan overview : Plan ID & Plan name
@@ -455,4 +476,146 @@ az sig image-definition list \
 - Version gallery : `az sig image-version list --resource-group rg-smw-marketplace --gallery-name galSMWMarketplace --gallery-image-definition smw-knowledge-base` — `provisioningState = Succeeded`
 - Prévention régression : `packer/smw-vm.pkr.hcl` commentaire + ADR-800 Décision 2
 
+---
+
+## Étape 7b : Technical configuration — Properties
+
+### Question Partner Center
+
+> **Properties** : Select the properties this plan supports.
+
+### Analyse case par case
+
+| Propriété | Décision | Justification |
+|-----------|----------|---------------|
+| **Supports VM extensions** | ✅ Coché | Standard — permet Azure Monitor, agents backup, Defender for Cloud, etc. Aucune raison de décocher. |
+| **Supports backup** | ✅ Coché | Disque de données 128 GB contient MySQL (wiki pages, annotations SMW, uploads). Les clients doivent pouvoir activer Azure Backup. Ubuntu 22.04 LTS supporte l'agent Azure Backup. |
+| **Supports accelerated networking** | ✅ Coché | Ubuntu 22.04 LTS inclut les drivers Mellanox VF requis. Disponible sur les VM recommandées (Standard_D2s_v3, D4s_v3, D8s_v3). Non disponible sur Standard_B2ms/B4ms mais Azure gère silencieusement l'absence de support — aucun risque à cocher. |
+| **Is a network virtual appliance** | ☐ Non coché | SMW est une application wiki/CMS, pas un équipement réseau. |
+| **Supports NVMe** | ☐ Non coché | Disques Standard SSD Premium LRS suffisants. Pas de charge I/O nécessitant NVMe. |
+| **Supports cloud-init configuration** | ☐ Non coché | Ubuntu 22.04 a cloud-init installé, mais l'initialisation SMW passe par `08-firstboot-setup.sh` (systemd oneshot), pas cloud-init. Cocher induirait en erreur les clients qui s'attendraient à passer des user-data cloud-init. |
+| **Supports Microsoft Entra Identity authentication** | ☐ Non coché | ADR-302 documente SSO via Entra ID mais c'est une configuration post-déploiement optionnelle — non intégrée dans l'image. Ne pas cocher pour ne pas créer une fausse attente. |
+| **Supports hibernation** | ☐ Non coché | Hibernation non testée, non validée pour SMW. MySQL en cours d'exécution + état wiki en mémoire — risque de corruption lors d'une hibernation non contrôlée. |
+| **Supports remote desktop/SSH** | ✅ Coché | SSH key-only authentication activé dans l'image. Obligatoire pour la gestion et le support. |
+| **Requires custom ARM template for deployment** | ✅ Coché | `arm/mainTemplate.json` + `arm/createUIDefinition.json` gèrent : disque de données 128 GB, NSG (ports 22/80/443), paramètres first-boot (domaine, email admin). Sans le template custom, le disque de données et la configuration réseau ne seraient pas provisionnés correctement. |
+
+### Décision retenue (cases cochées)
+
+| # | Propriété |
+|---|-----------|
+| ✅ | Supports VM extensions |
+| ✅ | Supports backup |
+| ✅ | Supports accelerated networking |
+| ✅ | Supports remote desktop/SSH |
+| ✅ | Requires custom ARM template for deployment |
+
+**Sources validées** :
+- `arm/mainTemplate.json` — disque de données, NSG, paramètres first-boot
+- `arm/createUIDefinition.json` — UI de déploiement custom
+- `packer/provisioners/08-firstboot-setup.sh` — init non cloud-init
+- ADR-302 : SSO Entra ID optionnel, post-déploiement uniquement
+
+---
+
+## Étape 7c : Technical configuration — Recommended VM sizes & Open ports
+
+### Recommended VM sizes (6 / 6 slots utilisés)
+
+| Priorité | Taille | vCPU / RAM | Usage recommandé |
+|----------|--------|-----------|-----------------|
+| 1 | `Standard_B2ms` | 2 vCPU / 8 GB | Évaluation, POC, démo — coût minimal |
+| 2 | `Standard_D2s_v3` | 2 vCPU / 8 GB | Production légère (≤ 50 users) — **défaut recommandé** |
+| 3 | `Standard_D4s_v3` | 4 vCPU / 16 GB | Wikis moyens, équipes éditoriales actives |
+| 4 | `Standard_D8s_v3` | 8 vCPU / 32 GB | Wikis larges, fort trafic |
+| 5 | `Standard_B4ms` | 4 vCPU / 16 GB | Pilotes et déploiements équipe (burstable) |
+| 6 | `Standard_E2s_v3` | 2 vCPU / 16 GB | Wikis sémantiques lourds — MySQL bénéficie du double de RAM pour les requêtes #ask volumineuses |
+
+> Ordre : du moins coûteux au plus puissant, avec `Standard_E2s_v3` (memory-optimized) en dernier slot pour les cas à forte charge SMW/MySQL.
+> `Standard_D2s_v3` mis en second pour orienter vers la taille de production recommandée.
+> Les 5 premières tailles correspondent aux `allowedSizes` de `arm/createUIDefinition.json`.
+
+### Open ports
+
+Port 22 (SSH) est automatiquement ouvert par Azure pour Linux — ne pas re-déclarer ici.
+
+| Label | Port | Protocol |
+|-------|------|----------|
+| HTTP  | 80   | TCP |
+| HTTPS | 443  | TCP |
+
+**Justification** : UFW dans l'image n'autorise que 22/80/443. Le port 80 redirige vers 443 (HTTPS). Déclarer uniquement les ports applicatifs web, pas SSH.
+
+**Sources validées** :
+- `packer/provisioners/07-security-harden.sh` — règles UFW (22, 80, 443)
+- `arm/mainTemplate.json` — NSG rules confirment les mêmes ports
+
+---
+
+## Étape 7d : Technical configuration — Security type
+
+### Question Partner Center
+
+> **Security type** : Select the security type for your Gen 2 images.
+> Options : `None` · `Trusted launch (Recommended)` · `Trusted launch and confidential`
+
+### Décision
+
+**✅ Sélectionner : `Trusted launch (Recommended)`**
+
+### Justification
+
+| Critère | Valeur |
+|---------|--------|
+| SecurityType gallery image definition | `TrustedLaunch` (requis — voir Étape 7) |
+| Image Packer construite avec | `trusted_launch_enabled = true` (Packer `azure-arm`) |
+| Cohérence Partner Center → Gallery | Doit correspondre — `Trusted launch` ↔ `TrustedLaunch` |
+| Confidential VM | ❌ Non requis — pas de workloads sensibles justifiant le chiffrement mémoire CPU |
+| `None` | ❌ Interdit — incompatible avec une image definition `SecurityType = TrustedLaunch` |
+
+> **Règle** : Partner Center impose que le security type sélectionné corresponde à celui
+> de l'image definition dans la gallery. Sélectionner `None` avec une image `TrustedLaunch`
+> produira une erreur de validation à la soumission.
+
+### Fonctionnalités activées par Trusted Launch
+
+| Fonctionnalité | Rôle |
+|----------------|------|
+| **Secure Boot** | Empêche le chargement de bootloaders/OS non signés |
+| **vTPM** | Puce TPM virtuelle — stockage sécurisé des clés de démarrage |
+| **Integrity monitoring** | Attestation de démarrage, visibilité dans Azure Security Center |
+
+> Ces fonctionnalités sont transparentes pour l'utilisateur final — aucune configuration requise post-déploiement.
+
 <!-- Prochaine étape : Étape 8 — Preview audience -->
+
+---
+
+## Étape 8 : Resell through CSPs
+
+### Question Partner Center
+
+> **Make my usage-based monthly billed plans available for resell to \***
+> - `Any partner in the CSP program`
+> - `Specific partners in the CSP program I select`
+> - `No partners in the CSP program`
+
+### Décision
+
+**✅ Sélectionner : `No partners in the CSP program`**
+
+### Justification
+
+| Critère | Analyse |
+|---------|---------|
+| **Modèle tarifaire** | BYOL / Free — aucune facturation usage-based via CSP à gérer |
+| **Cible initiale** | Déploiement direct — entreprises et wikis communautaires, pas de revendeurs |
+| **Complexité opérationnelle** | CSP implique des accords de revente, marges, support tier-1 par le CSP — hors scope v1 |
+| **Réversibilité** | Ce paramètre peut être modifié après publication — démarrer conservateur est sans risque |
+| **Open-source** | SMW est open-source ; la valeur ajoutée est l'image préconfigurée, pas un accord de licence CSP |
+
+> **Note** : La mention *"All plans with BYOL (Bring your own license) pricing are opted in"*
+> s'applique automatiquement si un plan BYOL existe — sans action requise de notre part.
+> Notre plan `standard` est en facturation Azure directe (infrastructure only), donc
+> uniquement le choix manuel ci-dessus s'applique.
+
+<!-- Prochaine étape : Étape 9 — Co-sell with Microsoft -->
