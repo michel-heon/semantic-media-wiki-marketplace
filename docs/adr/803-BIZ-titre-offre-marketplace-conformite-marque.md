@@ -54,9 +54,12 @@ Le titre soumis était : **`Semantic MediaWiki Cloud Edition — Azure Virtual M
 
 L'expression **"Azure Virtual Machines"** est une marque déposée de Microsoft. Son utilisation directe dans le titre d'une offre tierce est interdite par la politique de contenu Microsoft Marketplace.
 
-Ce blocage s'est produit à deux reprises :
-- Soumission du 05/19/2026 : titre `Semantic MediaWiki — Azure VM`
-- Soumission du 05/20/2026 : titre `Semantic MediaWiki Cloud Edition — Azure Virtual Machines`
+Ce blocage s'est produit à trois reprises :
+- Soumission du 05/19/2026 : titre `Semantic MediaWiki — Azure VM` → rejet 100.7.1
+- Soumission du 05/20/2026 : titre `Semantic MediaWiki Cloud Edition — Azure Virtual Machines` → rejet 100.1.1.1
+- Soumission du 05/20/2026 : titre `Semantic MediaWiki Cloud Edition — Wiki Platform for Azure` → rejet 100.7.1
+
+**Constat** : le mot **"Azure"** est lui-même une marque Microsoft. Toute formulation incluant "Azure" (y compris "for Azure", "on Azure") est susceptible d'être rejetée dans le titre d'une offre tierce.
 
 ### Contraintes
 
@@ -69,25 +72,26 @@ Ce blocage s'est produit à deux reprises :
 
 ### Titre retenu
 
-> **`Semantic MediaWiki Cloud Edition for Azure`**
+> **`Semantic MediaWiki Cloud — Linked Data Wiki Platform`**
 
 ### Justification
 
 | Critère | Explication |
 |---------|-------------|
-| Conformité marque | "for Azure" = usage descriptif autorisé ; aucune marque déposée reprise |
-| Clarté pour l'utilisateur | Indique explicitement la plateforme cible (Azure) |
-| Cohérence produit | "Cloud Edition" maintenu — différencie de l'édition on-premises |
-| Concision | Court, lisible dans les listes de résultats Marketplace |
+| Conformité marque | Aucune marque Microsoft (ni "Azure", ni "Virtual Machines", ni "Cloud" Microsoft) |
+| Web sémantique | "Linked Data" positionne clairement dans l'écosystème RDF/SPARQL/Web sémantique |
+| Différenciation | "Wiki Platform" décrit l'usage final ; "Cloud" indique le mode de déploiement |
+| Concision | Lisible dans les listes de résultats Marketplace |
 
 ### Règle générale à retenir
 
 | ❌ Interdit | ✅ Autorisé |
 |------------|------------|
-| `... — Azure Virtual Machines` | `... for Azure` |
-| `... Azure VM` | `... on Azure` |
-| `... on Azure Virtual Machines` | `... powered by Azure` |
-| `Microsoft Azure MediaWiki` | `... hosted on Azure` |
+| `... — Azure Virtual Machines` | Nom produit sans référence Microsoft |
+| `... Azure VM` | Référence à Linked Data, Web sémantique |
+| `... for Azure` | Description fonctionnelle neutre |
+| `... on Azure` | Termes du domaine (Wiki, Knowledge, Semantic) |
+| `Microsoft Azure MediaWiki` | — |
 
 ---
 
@@ -96,7 +100,7 @@ Ce blocage s'est produit à deux reprises :
 **Chemin Partner Center** :  
 `Marketplace offers → Semantic MediaWiki Cloud Edition → Offer listing → Listing title`
 
-**Valeur à saisir** : `Semantic MediaWiki Cloud Edition for Azure`
+**Valeur à saisir** : `Semantic MediaWiki Cloud — Linked Data Wiki Platform`
 
 **Action** : Modifier le champ, sauvegarder, republier l'offre.
 
