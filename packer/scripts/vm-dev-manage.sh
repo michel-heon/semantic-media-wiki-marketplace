@@ -117,6 +117,7 @@ case "$cmd" in
             --admin-username azureuser \
             --generate-ssh-keys \
             --public-ip-sku Standard \
+            --security-type TrustedLaunch \
             --output table
 
         # Ouvrir les ports HTTP/HTTPS dans le NSG généré automatiquement
