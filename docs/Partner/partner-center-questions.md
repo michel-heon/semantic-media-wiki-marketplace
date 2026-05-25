@@ -42,11 +42,11 @@ lors de la création et configuration de l'offre **Azure Virtual Machine** pour 
 | Champ | Valeur |
 |-------|--------|
 | **Offer ID** | `smw-knowledge-base` |
-| **Offer alias** | `Cotechnoe SMW — Azure VM` |
+| **Offer alias** | `Cotechnoe SMW — Wiki Platform` |
 
 **Justification** :
 - **Offer ID** : déjà validé dans ADR-800 (`OFFER_ID="smw-knowledge-base"`). Immuable après création. Orienté usage client — visible dans l'URL Marketplace publique et via `az` / PowerShell. Cohérent avec le pattern Cotechnoe (`dspace-9-ir`, `vivo-research-profiles`, `apache-jena-fuseki`).
-- **Offer alias** : mis à jour vers `Cotechnoe SMW — Azure VM` pour aligner avec le nouveau branding (ADR-803). Purement interne au Partner Center (jamais visible par les clients) — le nom complet reste reconnaissable dans le dashboard pour l'équipe (P2 Nadia, P5 Jérôme).
+- **Offer alias** : mis à jour vers `Cotechnoe SMW — Wiki Platform` (suppression de "Azure VM" pour conformité Policy 100.7.1 — "Azure VM" est une marque déposée Microsoft ne pouvant pas apparaître dans les champs listing). Purement interne au Partner Center (jamais visible par les clients) — le nom complet reste reconnaissable dans le dashboard pour l'équipe (P2 Nadia, P5 Jérôme).
 
 ---
 
@@ -98,21 +98,39 @@ lors de la création et configuration de l'offre **Azure Virtual Machine** pour 
 | Champ | Valeur |
 |-------|--------|
 | **Name** | `Cotechnoe SMW — Linked Open Data Wiki Platform` |
-| **Search results summary** | `Cotechnoe SMW: Linked Open Data wiki platform on Azure — powered by Semantic MediaWiki.` |
+| **Search results summary** | `Cotechnoe SMW: self-hosted Linked Open Data wiki on Azure — built on Semantic MediaWiki. Pre-configured, hardened stack. Deploy in minutes.` |
 | **Privacy policy URL** | `https://github.com/Cotechnoe/server-azure-marketplace-docs/blob/main/PRIVACY.md` |
 
-### Short description (≤ 256 chars)
+### Short description (≤ 2 047 chars)
 
 ```
-Cotechnoe SMW turns your Azure VM into a self-hosted Linked Open Data knowledge graph — built on Semantic MediaWiki. Pre-configured, hardened stack: MediaWiki 1.43, SMW 6.0, PHP 8.2, MySQL 8.0. Deploy in minutes. Data stays in your Azure subscription.
+Cotechnoe SMW turns your Azure VM into a self-hosted Linked Open Data knowledge graph — built on Semantic MediaWiki, the open-source structured-data extension to MediaWiki, the software that powers Wikipedia.
+
+Authors annotate wiki pages with typed properties using a simple inline syntax. The knowledge graph builds automatically and is queryable by any team member — no SQL, scripting, or data engineer required. Embed live #ask queries on any page: tables, charts, timelines, and maps that update as data changes. Export as RDF/OWL or query via the built-in SPARQL endpoint.
+
+Designed for universities and research institutions documenting projects and publications, enterprise knowledge teams centralizing standards and glossaries, compliance teams tracking IT assets and regulatory requirements, and IT teams documenting systems and runbooks with semantic cross-links.
+
+Pre-configured, production-ready stack:
+• MediaWiki 1.43 — the open-source wiki platform powering Wikipedia
+• Semantic MediaWiki 6.0 — structured data, semantic queries, and knowledge-graph capabilities
+• SemanticResultFormats — charts, calendars, timelines, and maps for #ask queries
+• PHP 8.2 FPM, MySQL 8.0, Apache 2.4 with automatic HTTP→HTTPS redirect
+• Ubuntu 22.04 LTS — supported until 2032 (ESM)
+• Self-signed HTTPS certificate auto-provisioned at first boot
+
+Security: SSH key authentication enforced; password login disabled; UFW firewall (ports 22, 80, 443 only); MySQL bound to localhost; PHP-FPM under a dedicated non-root user; built against Azure Marketplace certification and CIS benchmark recommendations.
+
+Data sovereignty: all data — wiki pages, annotations, and uploaded files — resides exclusively within your Azure subscription and chosen region. No telemetry sent to Cotechnoe. GDPR-compatible for EU deployments.
+
+Deploy from the Azure portal, complete the first-boot wizard, and your knowledge base is live in minutes.
 ```
 
 ### Description (≤ 5 000 chars HTML)
 
 ```html
-<p>Cotechnoe SMW is a pre-configured Azure VM image that turns a standard wiki into a Linked Open Data knowledge graph. Built on Semantic MediaWiki — an open-source extension to MediaWiki, the software that powers Wikipedia — it lets authors annotate wiki pages with typed properties using a simple inline syntax. The knowledge graph is built automatically and queryable by any team member without SQL, scripting, or a dedicated data engineer.</p>
+<p>Semantic MediaWiki is an open-source extension to MediaWiki — the software that powers Wikipedia — that transforms a standard wiki into a structured-data platform. Authors annotate wiki pages with typed properties using a simple inline syntax. SMW automatically builds a queryable knowledge graph that any team member can search and query without SQL, scripting, or a dedicated data engineer.</p>
 
-<p>Deploy from the Azure portal, complete the first-boot wizard, and your knowledge base is live — in minutes, not days. All data stays within your Azure subscription.</p>
+<p>This Azure Marketplace image delivers a fully pre-configured, hardened VM ready to use. Deploy from the Azure portal, complete the first-boot wizard, and your knowledge base is live — in minutes, not days. All data stays within your Azure subscription.</p>
 
 <h2>Who benefits</h2>
 <ul>
