@@ -245,6 +245,10 @@ marketplace-test: ## Exécuter un test CTT spécifique (TEST=nom VM=vm_name)
 marketplace-tests: ## Lister les tests CTT disponibles
 	@bash $(CTT) list
 
+.PHONY: listing-validate
+listing-validate: ## T9 — Valider conformité description Partner Center (politiques 100.x)
+	@bash docs/Partner/validate-listing.sh
+
 .PHONY: marketplace-gallery-permissions
 marketplace-gallery-permissions: ## Configurer les permissions ACG pour Partner Center (ADR-800 Décision 1)
 	$(call log_action,Configuration des permissions Azure Compute Gallery pour Partner Center...)
