@@ -278,21 +278,27 @@ phase_image() {
     _ssh_check "T-CERT-03" "Swap désactivé et absent de /etc/fstab" \
         "! swapon --show 2>/dev/null | grep -q . && ! grep -E '^[^#]+[[:space:]]swap[[:space:]]' /etc/fstab"
 
-    # T-CERT-04 (T4) : Aucun authorized_keys résiduel (politique sécurité image généralisée)
-    _ssh_check "T-CERT-04" "Aucun authorized_keys résiduel (/root et /home)" \
-        "sudo find /root /home -name authorized_keys 2>/dev/null | head -1 | grep -q . && exit 1 || exit 0"
+    # T-CERT-04 (T4) : Connexion root SSH bloquée (politique sécurité 200.5.8)
+    # Note : sur une VM Azure post-déploiement, waagent réinjecte un authorized_keys
+    # root contenant un wrapping inerte (command="echo Please login as azureuser..."),
+    # ce qui rend le compte root inopérant en SSH même si le fichier existe. On vérifie :
+    # soit le fichier est absent, soit il est wrappé avec le pattern Azure (no-port-forwarding).
+    _ssh_check "T-CERT-04" "Connexion SSH root bloquée (fichier absent ou wrappé Azure)" \
+        "sudo test ! -f /root/.ssh/authorized_keys || sudo grep -q no-port-forwarding /root/.ssh/authorized_keys"
 
     # T-CERT-05 (T5) : Paquets USN bloquants patchés (libgnutls30, libarchive13, bind9-*, libwbclient0)
+    # Note : `dpkg-query -W -f='${Version}'` casse le wrapping bash -c (guillemets simples).
+    # Approche : `dpkg -s pkg | grep ^Version: | cut -d' ' -f2` — sans guillemets dans la chaîne.
     _ssh_check "T-CERT-05a" "USN-8284-1 libgnutls30 >= 3.7.3-4ubuntu1.9" \
-        "dpkg --compare-versions \$(dpkg-query -W -f='\${Version}' libgnutls30 2>/dev/null) ge 3.7.3-4ubuntu1.9"
+        "V=\$(dpkg -s libgnutls30 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 3.7.3-4ubuntu1.9"
     _ssh_check "T-CERT-05b" "USN-8292-1 libarchive13 >= 3.6.0-1ubuntu1.7" \
-        "dpkg --compare-versions \$(dpkg-query -W -f='\${Version}' libarchive13 2>/dev/null) ge 3.6.0-1ubuntu1.7"
+        "V=\$(dpkg -s libarchive13 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 3.6.0-1ubuntu1.7"
     _ssh_check "T-CERT-05c" "USN-8293-1 bind9-host >= 1:9.18.39-0ubuntu0.22.04.4" \
-        "dpkg --compare-versions \$(dpkg-query -W -f='\${Version}' bind9-host 2>/dev/null) ge 1:9.18.39-0ubuntu0.22.04.4"
+        "V=\$(dpkg -s bind9-host 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 1:9.18.39-0ubuntu0.22.04.4"
     _ssh_check "T-CERT-05d" "USN-8293-1 bind9-libs >= 1:9.18.39-0ubuntu0.22.04.4" \
-        "dpkg --compare-versions \$(dpkg-query -W -f='\${Version}' bind9-libs 2>/dev/null) ge 1:9.18.39-0ubuntu0.22.04.4"
+        "V=\$(dpkg -s bind9-libs 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 1:9.18.39-0ubuntu0.22.04.4"
     _ssh_check "T-CERT-05e" "USN-8306-1 libwbclient0 >= 2:4.15.13+dfsg-0ubuntu1.12" \
-        "dpkg --compare-versions \$(dpkg-query -W -f='\${Version}' libwbclient0 2>/dev/null) ge 2:4.15.13+dfsg-0ubuntu1.12"
+        "V=\$(dpkg -s libwbclient0 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 2:4.15.13+dfsg-0ubuntu1.12"
 }
 
 # ---------------------------------------------------------------------------
