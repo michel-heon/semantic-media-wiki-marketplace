@@ -59,21 +59,55 @@ apt-get clean
 rm -rf /var/lib/apt/lists/*
 
 # ---------------------------------------------------------------------------
-# 4. Nettoyage des historiques bash et SSH known_hosts
+# 4. Nettoyage des historiques bash et SSH known_hosts + authorized_keys (T4)
+#    Politique Microsoft Marketplace 200.5 — clés SSH de build supprimées.
 # ---------------------------------------------------------------------------
 echo "[09-cleanup-generalize] Nettoyage des historiques utilisateurs..."
 
 # root
 truncate -s 0 /root/.bash_history 2>/dev/null || true
 rm -f /root/.ssh/known_hosts 2>/dev/null || true
+rm -f /root/.ssh/authorized_keys 2>/dev/null || true
 
-# ubuntu (utilisateur par défaut Azure Marketplace)
+# ubuntu (utilisateur par défaut Azure Marketplace) + tout user supplémentaire
 for user_home in /home/*; do
     if [[ -d "${user_home}" ]]; then
         truncate -s 0 "${user_home}/.bash_history" 2>/dev/null || true
         rm -f "${user_home}/.ssh/known_hosts" 2>/dev/null || true
+        rm -f "${user_home}/.ssh/authorized_keys" 2>/dev/null || true
     fi
 done
+
+echo "[09-cleanup-generalize] [T4] Validation suppression authorized_keys..."
+if find /root/.ssh /home/*/.ssh -name authorized_keys 2>/dev/null | grep -q .; then
+    echo "[09-cleanup-generalize] ❌ ERREUR : authorized_keys résiduels détectés" >&2
+    find /root/.ssh /home/*/.ssh -name authorized_keys 2>/dev/null >&2
+    exit 1
+fi
+echo "[09-cleanup-generalize] [T4] ✅ Aucun authorized_keys résiduel"
+
+# ---------------------------------------------------------------------------
+# 4.b Désactivation du swap sur disque OS (T3 — Politique 200.3.3)
+#     Azure exige aucune partition swap sur le disque OS.
+#     Swap géré ultérieurement via le resource disk éphémère par cloud-init.
+# ---------------------------------------------------------------------------
+echo "[09-cleanup-generalize] [T3] Désactivation du swap OS disk..."
+swapoff -a || true
+# Retire toutes les entrées swap du fstab (commentées ou non)
+sed -i.bak '/\sswap\s/d' /etc/fstab
+# Validation
+if grep -E '^[^#].*\sswap\s' /etc/fstab; then
+    echo "[09-cleanup-generalize] ❌ ERREUR : entrée swap résiduelle dans /etc/fstab" >&2
+    exit 1
+fi
+if swapon --show 2>/dev/null | grep -q .; then
+    echo "[09-cleanup-generalize] ❌ ERREUR : swap actif après swapoff" >&2
+    swapon --show >&2
+    exit 1
+fi
+echo "[09-cleanup-generalize] [T3] ✅ Swap désactivé et purgé de /etc/fstab"
+# Supprimer le backup généré par sed (sinon il reste dans l'image)
+rm -f /etc/fstab.bak
 
 # ---------------------------------------------------------------------------
 # 5. Nettoyage des fichiers temporaires de build
