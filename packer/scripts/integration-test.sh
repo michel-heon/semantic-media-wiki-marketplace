@@ -197,7 +197,9 @@ phase_image() {
 
     if [[ -z "$VM_IP" ]]; then
         for id in IMAGE-01 IMAGE-02 IMAGE-03 IMAGE-04 IMAGE-05 \
-                  IMAGE-06 IMAGE-07 IMAGE-08 IMAGE-09 IMAGE-10; do
+                  IMAGE-06 IMAGE-07 IMAGE-08 IMAGE-09 IMAGE-10 \
+                  CERT-01 CERT-02 CERT-03 CERT-04 \
+                  CERT-05a CERT-05b CERT-05c CERT-05d CERT-05e; do
             skip "T-${id}: VM '${VM_NAME}' introuvable dans '${E2E_RG}'"
         done
         return 0
@@ -257,6 +259,40 @@ phase_image() {
     # 'Status: active' cassait le quoting SSH — on cherche le mot-clé active sans guillemets.
     _ssh_check "T-IMAGE-10" "UFW actif" \
         "sudo ufw status 2>/dev/null | grep -q active"
+
+    # -----------------------------------------------------------------------
+    # Tests T-CERT-* — Certification Microsoft Marketplace (ADR-804, Issue #4)
+    # Politique 200.5.8 — VM Linux Endorsed Distribution sur Azure
+    # Référence : docs/Certification/2026-06-18-partner.pdf
+    # -----------------------------------------------------------------------
+
+    # T-CERT-01 (T1) : GRUB kernel params Azure (console série + rootdelay)
+    _ssh_check "T-CERT-01" "GRUB_CMDLINE_LINUX = console=ttyS0 earlyprintk=ttyS0 rootdelay=300" \
+        "grep -q console=ttyS0 /etc/default/grub && grep -q earlyprintk=ttyS0 /etc/default/grub && grep -q rootdelay=300 /etc/default/grub"
+
+    # T-CERT-02 (T2) : waagent (WALinuxAgent) installé et version >= 2.2.10
+    _ssh_check "T-CERT-02" "waagent installé (>= 2.2.10)" \
+        "command -v waagent >/dev/null && waagent --version 2>/dev/null | grep -qE 'WALinuxAgent-[0-9]'"
+
+    # T-CERT-03 (T3) : Swap désactivé et purgé de /etc/fstab (politique Azure OS disk)
+    _ssh_check "T-CERT-03" "Swap désactivé et absent de /etc/fstab" \
+        "! swapon --show 2>/dev/null | grep -q . && ! grep -E '^[^#]+[[:space:]]swap[[:space:]]' /etc/fstab"
+
+    # T-CERT-04 (T4) : Aucun authorized_keys résiduel (politique sécurité image généralisée)
+    _ssh_check "T-CERT-04" "Aucun authorized_keys résiduel (/root et /home)" \
+        "sudo find /root /home -name authorized_keys 2>/dev/null | head -1 | grep -q . && exit 1 || exit 0"
+
+    # T-CERT-05 (T5) : Paquets USN bloquants patchés (libgnutls30, libarchive13, bind9-*, libwbclient0)
+    _ssh_check "T-CERT-05a" "USN-8284-1 libgnutls30 >= 3.7.3-4ubuntu1.9" \
+        "dpkg --compare-versions \$(dpkg-query -W -f='\${Version}' libgnutls30 2>/dev/null) ge 3.7.3-4ubuntu1.9"
+    _ssh_check "T-CERT-05b" "USN-8292-1 libarchive13 >= 3.6.0-1ubuntu1.7" \
+        "dpkg --compare-versions \$(dpkg-query -W -f='\${Version}' libarchive13 2>/dev/null) ge 3.6.0-1ubuntu1.7"
+    _ssh_check "T-CERT-05c" "USN-8293-1 bind9-host >= 1:9.18.39-0ubuntu0.22.04.4" \
+        "dpkg --compare-versions \$(dpkg-query -W -f='\${Version}' bind9-host 2>/dev/null) ge 1:9.18.39-0ubuntu0.22.04.4"
+    _ssh_check "T-CERT-05d" "USN-8293-1 bind9-libs >= 1:9.18.39-0ubuntu0.22.04.4" \
+        "dpkg --compare-versions \$(dpkg-query -W -f='\${Version}' bind9-libs 2>/dev/null) ge 1:9.18.39-0ubuntu0.22.04.4"
+    _ssh_check "T-CERT-05e" "USN-8306-1 libwbclient0 >= 2:4.15.13+dfsg-0ubuntu1.12" \
+        "dpkg --compare-versions \$(dpkg-query -W -f='\${Version}' libwbclient0 2>/dev/null) ge 2:4.15.13+dfsg-0ubuntu1.12"
 }
 
 # ---------------------------------------------------------------------------
