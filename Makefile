@@ -249,6 +249,14 @@ marketplace-tests: ## Lister les tests CTT disponibles
 listing-validate: ## T9 — Valider conformité description Partner Center (politiques 100.x)
 	@bash docs/Partner/validate-listing.sh
 
+.PHONY: assets-validate
+assets-validate: ## T10 — Valider conformité logos/screenshots Partner Center (politiques 100.3.x)
+	@bash docs/Partner/validate-assets.sh
+
+.PHONY: generate-sas-uri
+generate-sas-uri: ## T11 — Générer SAS URI VHD pour Partner Center (méthode legacy — préférer ACG)
+	@bash packer/scripts/generate-vhd-sas-uri.sh
+
 .PHONY: marketplace-gallery-permissions
 marketplace-gallery-permissions: ## Configurer les permissions ACG pour Partner Center (ADR-800 Décision 1)
 	$(call log_action,Configuration des permissions Azure Compute Gallery pour Partner Center...)
