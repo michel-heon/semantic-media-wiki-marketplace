@@ -200,7 +200,8 @@ phase_image() {
                   IMAGE-06 IMAGE-07 IMAGE-08 IMAGE-09 IMAGE-10 \
                   CERT-01 CERT-02 CERT-03 CERT-04 \
                   CERT-05a CERT-05b CERT-05c CERT-05d CERT-05e \
-                  CERT-06a CERT-06b CERT-06c; do
+                  CERT-06a CERT-06b CERT-06c \
+                  CERT-07a CERT-07b CERT-07c; do
             skip "T-${id}: VM '${VM_NAME}' introuvable dans '${E2E_RG}'"
         done
         return 0
@@ -310,6 +311,17 @@ phase_image() {
         "lsmod | awk '{print \$1}' | grep -qx hv_storvsc || grep -qE '(^|/)hv_storvsc\\.ko\$' /lib/modules/\$(uname -r)/modules.builtin"
     _ssh_check "T-CERT-06c" "Fichier /etc/modules-load.d/azure-hyperv.conf présent" \
         "test -f /etc/modules-load.d/azure-hyperv.conf"
+
+    # T-CERT-07 (T7) : Audit crons + journaux non-sensibles — Politique 200.5
+    # Aucun crontab applicatif www-data/mysql/apache (non documenté).
+    _ssh_check "T-CERT-07a" "Aucun crontab applicatif non documenté (www-data/mysql/apache)" \
+        "for u in www-data mysql apache; do sudo test ! -f /var/spool/cron/crontabs/\$u || exit 1; done"
+    # Pas de pattern sensible (password=..., clé privée) dans syslog/auth.log/cloud-init-output
+    _ssh_check "T-CERT-07b" "Aucun credential clair dans logs résiduels (syslog/auth/cloud-init)" \
+        "! sudo grep -aEir 'password[[:space:]]*=[[:space:]]*[^\"\$ ]+|BEGIN (RSA|OPENSSH) PRIVATE KEY' /var/log/syslog /var/log/auth.log /var/log/cloud-init-output.log 2>/dev/null | grep -v ^# | head -1"
+    # LocalSettings.php non lisible par others (mode 640 ou plus strict)
+    _ssh_check "T-CERT-07c" "LocalSettings.php non lisible par others (mode <= 0640)" \
+        "M=\$(sudo stat -c %a /opt/mediawiki/LocalSettings.php 2>/dev/null); [ -n \"\$M\" ] && [ \$((\$M & 4)) -eq 0 ]"
 }
 
 # ---------------------------------------------------------------------------

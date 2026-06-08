@@ -110,6 +110,76 @@ echo "[09-cleanup-generalize] [T3] ✅ Swap désactivé et purgé de /etc/fstab"
 rm -f /etc/fstab.bak
 
 # ---------------------------------------------------------------------------
+# 4.c Audit des cron jobs et journaux sensibles (T7 — Politique 200.5)
+#     Inventaire de tout cron non-OS et garantie d'absence de credentials
+#     dans les logs applicatifs résiduels (LocalSettings.php, etc.).
+# ---------------------------------------------------------------------------
+echo "[09-cleanup-generalize] [T7] Audit des cron jobs..."
+
+# Inventaire — pour traçabilité (visible dans log Packer)
+echo "  → /etc/crontab :"
+[ -f /etc/crontab ] && grep -vE '^(#|$)' /etc/crontab || echo "  (vide ou absent)"
+
+echo "  → /etc/cron.d/ :"
+if [ -d /etc/cron.d ]; then
+    for _f in /etc/cron.d/*; do
+        [ -f "${_f}" ] && echo "    $(basename "${_f}"): $(grep -vEc '^(#|$)' "${_f}" || echo 0) entrées actives"
+    done
+fi
+
+echo "  → /etc/cron.{hourly,daily,weekly,monthly}/ :"
+for _period in hourly daily weekly monthly; do
+    _dir="/etc/cron.${_period}"
+    if [ -d "${_dir}" ]; then
+        _files=$(find "${_dir}" -maxdepth 1 -type f ! -name '.*' 2>/dev/null | wc -l)
+        echo "    ${_period}: ${_files} script(s)"
+    fi
+done
+
+echo "  → crontabs utilisateurs (/var/spool/cron/crontabs/) :"
+if [ -d /var/spool/cron/crontabs ]; then
+    _user_crons=$(find /var/spool/cron/crontabs -maxdepth 1 -type f 2>/dev/null | wc -l)
+    echo "    ${_user_crons} crontab utilisateur(s)"
+fi
+
+echo "  → systemd timers actifs :"
+systemctl list-timers --no-pager --no-legend 2>/dev/null \
+    | awk '{print "    " $NF}' | head -20 || echo "    (aucun)"
+
+# Politique : aucun cron applicatif SMW/MediaWiki ne doit avoir été ajouté
+# sans documentation. On vérifie l'absence de crontabs utilisateurs créés
+# par les provisioners (root/www-data en particulier).
+echo "[09-cleanup-generalize] [T7] Validation absence de crontabs applicatifs non-documentés..."
+for _user in www-data mysql apache; do
+    if [ -f "/var/spool/cron/crontabs/${_user}" ]; then
+        echo "[09-cleanup-generalize] ⚠ AVERTISSEMENT : crontab ${_user} détecté — vérifier intention" >&2
+        cat "/var/spool/cron/crontabs/${_user}" >&2
+    fi
+done
+
+# Garantir absence de credentials clairs dans les logs résiduels avant capture.
+# (Les logs ont été vidés en section 2, mais on vérifie qu'aucun nouveau log
+#  écrit ensuite ne contienne de pattern sensible.)
+echo "[09-cleanup-generalize] [T7] Scan logs résiduels pour credentials clairs..."
+_susp=0
+for _log in /var/log/syslog /var/log/auth.log /var/log/cloud-init-output.log \
+            /var/log/smw-install.log; do
+    if [ -s "${_log}" ] 2>/dev/null; then
+        # Patterns à risque : mot de passe ou clé privée en clair
+        if grep -aEi 'password[[:space:]]*=[[:space:]]*[^"$ ]+|BEGIN (RSA|OPENSSH) PRIVATE KEY' \
+               "${_log}" 2>/dev/null | grep -v '^#' | head -3; then
+            echo "[09-cleanup-generalize] ⚠ Pattern sensible détecté dans ${_log}" >&2
+            _susp=$((_susp + 1))
+        fi
+    fi
+done
+if [ "${_susp}" -gt 0 ]; then
+    echo "[09-cleanup-generalize] ❌ ERREUR : ${_susp} log(s) contiennent possiblement des credentials" >&2
+    exit 1
+fi
+echo "[09-cleanup-generalize] [T7] ✅ Aucun credential clair dans les logs résiduels"
+
+# ---------------------------------------------------------------------------
 # 5. Nettoyage des fichiers temporaires de build
 # ---------------------------------------------------------------------------
 echo "[09-cleanup-generalize] Nettoyage des fichiers temporaires..."
