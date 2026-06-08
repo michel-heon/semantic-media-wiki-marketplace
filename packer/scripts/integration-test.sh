@@ -201,7 +201,7 @@ phase_image() {
                   CERT-01 CERT-02 CERT-03 CERT-04 \
                   CERT-05a CERT-05b CERT-05c CERT-05d CERT-05e \
                   CERT-06a CERT-06b CERT-06c \
-                  CERT-07a CERT-07b CERT-07c; do
+                  CERT-07a CERT-07b-pwd CERT-07b-key CERT-07c; do
             skip "T-${id}: VM '${VM_NAME}' introuvable dans '${E2E_RG}'"
         done
         return 0
@@ -303,12 +303,14 @@ phase_image() {
         "V=\$(dpkg -s libwbclient0 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 2:4.15.13+dfsg-0ubuntu1.12"
 
     # T-CERT-06 (T6) : Drivers Hyper-V disponibles (chargés OU builtin) — Politique 200.3.3
-    # Sur Ubuntu Azure, hv_netvsc et hv_storvsc sont généralement builtin.
+    # Sur Ubuntu Azure, hv_netvsc/hv_storvsc sont généralement builtin dans le kernel azure-tuned.
     # On accepte les deux : présent dans lsmod OU dans modules.builtin.
+    # ⚠ Pas de guillemets simples dans cmd (cassent le wrapping bash -c '...').
+    # On utilise grep -w pour matcher le nom de module exact (sans regex spéciale).
     _ssh_check "T-CERT-06a" "Driver hv_netvsc chargé ou builtin (Hyper-V network)" \
-        "lsmod | awk '{print \$1}' | grep -qx hv_netvsc || grep -qE '(^|/)hv_netvsc\\.ko\$' /lib/modules/\$(uname -r)/modules.builtin"
+        "lsmod | cut -d\\  -f1 | grep -qx hv_netvsc || grep -qw hv_netvsc /lib/modules/\$(uname -r)/modules.builtin"
     _ssh_check "T-CERT-06b" "Driver hv_storvsc chargé ou builtin (Hyper-V storage)" \
-        "lsmod | awk '{print \$1}' | grep -qx hv_storvsc || grep -qE '(^|/)hv_storvsc\\.ko\$' /lib/modules/\$(uname -r)/modules.builtin"
+        "lsmod | cut -d\\  -f1 | grep -qx hv_storvsc || grep -qw hv_storvsc /lib/modules/\$(uname -r)/modules.builtin"
     _ssh_check "T-CERT-06c" "Fichier /etc/modules-load.d/azure-hyperv.conf présent" \
         "test -f /etc/modules-load.d/azure-hyperv.conf"
 
@@ -316,12 +318,20 @@ phase_image() {
     # Aucun crontab applicatif www-data/mysql/apache (non documenté).
     _ssh_check "T-CERT-07a" "Aucun crontab applicatif non documenté (www-data/mysql/apache)" \
         "for u in www-data mysql apache; do sudo test ! -f /var/spool/cron/crontabs/\$u || exit 1; done"
-    # Pas de pattern sensible (password=..., clé privée) dans syslog/auth.log/cloud-init-output
-    _ssh_check "T-CERT-07b" "Aucun credential clair dans logs résiduels (syslog/auth/cloud-init)" \
-        "! sudo grep -aEir 'password[[:space:]]*=[[:space:]]*[^\"\$ ]+|BEGIN (RSA|OPENSSH) PRIVATE KEY' /var/log/syslog /var/log/auth.log /var/log/cloud-init-output.log 2>/dev/null | grep -v ^# | head -1"
-    # LocalSettings.php non lisible par others (mode 640 ou plus strict)
-    _ssh_check "T-CERT-07c" "LocalSettings.php non lisible par others (mode <= 0640)" \
-        "M=\$(sudo stat -c %a /opt/mediawiki/LocalSettings.php 2>/dev/null); [ -n \"\$M\" ] && [ \$((\$M & 4)) -eq 0 ]"
+    # Pas de pattern sensible dans logs résiduels.
+    # Stratégie : grep -q retourne 0 si trouvé, 1 si non trouvé. On veut FAIL si trouvé.
+    # Utilisation de grep simple (BRE) sans alternation regex pour éviter pièges quoting.
+    # ⚠ Pas de guillemets simples dans cmd (cassent bash -c '...').
+    _ssh_check "T-CERT-07b-pwd" "Aucun 'password=...' clair dans logs résiduels" \
+        "! sudo grep -aEi \"password[[:space:]]*=\" /var/log/syslog /var/log/auth.log /var/log/cloud-init-output.log 2>/dev/null | head -1 | grep -q ."
+    # Pattern recherché : '-----BEGIN ... PRIVATE KEY-----' (5 tirets, vrai bloc PEM).
+    # Évite les faux positifs causés par auth.log qui logge la commande sudo elle-même.
+    _ssh_check "T-CERT-07b-key" "Aucune clé privée PEM (-----BEGIN PRIVATE KEY-----) dans logs résiduels" \
+        "! sudo grep -aErI -- \"-----BEGIN [A-Z]* PRIVATE KEY-----\" /var/log/syslog /var/log/auth.log /var/log/cloud-init-output.log 2>/dev/null | head -1 | grep -q ."
+    # LocalSettings.php non lisible par others : extraire dernier digit du mode octal.
+    # Si fichier absent (image pré-firstboot), le test est skippé via condition initiale.
+    _ssh_check "T-CERT-07c" "LocalSettings.php non lisible par others (mode others-read absent)" \
+        "sudo test ! -f /opt/mediawiki/LocalSettings.php || { M=\$(sudo stat -c %a /opt/mediawiki/LocalSettings.php); O=\$(echo \$M | tail -c2); test \$((O & 4)) -eq 0; }"
 }
 
 # ---------------------------------------------------------------------------
