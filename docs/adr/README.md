@@ -125,6 +125,7 @@ git commit -m "docs(adr): ADR-201 [INFRA] Nouvelle décision"
 |-----|-------|--------|------|---------|
 | [800](./800-BIZ-publication-azure-marketplace-vm-offer.md) | Publication Offre VM sur Azure Marketplace — Conformité et Bonnes Pratiques Microsoft | ✅ Accepté | 2026-02-21 | BIZ |
 | [801](./801-BIZ-strategie-documentation-marketplace.md) | Stratégie de Documentation — Offre Azure Marketplace (utilisateur final) | ✅ Accepté | 2026-03-05 | BIZ |
+| [804](./804-BIZ-politiques-certification-microsoft-marketplace.md) | Politiques de Certification Microsoft Marketplace — Conformité Offre VM SMW | ✅ Accepté | 2026-06-08 | BIZ |
 
 ---
 
