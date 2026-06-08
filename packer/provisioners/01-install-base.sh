@@ -133,6 +133,53 @@ echo "[01-install-base] [T1] GRUB_CMDLINE_LINUX configuré :"
 grep "^GRUB_CMDLINE_LINUX=" /etc/default/grub
 
 # ---------------------------------------------------------------------------
+# 2.d Drivers Hyper-V (T6 — Politique 200.3.3)
+#     Requis : hv_netvsc et hv_storvsc disponibles (chargés ou builtin).
+#     Sur Ubuntu cloud Azure, ces modules sont généralement builtin dans le
+#     kernel Azure-tuned. On valide les deux cas et on garantit le chargement
+#     au boot via /etc/modules-load.d/ (idempotent — pas d'erreur si builtin).
+# ---------------------------------------------------------------------------
+echo "[01-install-base] [T6] Validation drivers Hyper-V (hv_netvsc, hv_storvsc)..."
+
+check_hv_driver() {
+    local _drv="$1"
+    # 1) Chargé en mémoire ?
+    if lsmod | awk '{print $1}' | grep -qx "${_drv}"; then
+        echo "  ✓ ${_drv} : chargé (lsmod)"
+        return 0
+    fi
+    # 2) Builtin dans le kernel courant ?
+    local _kver _builtin
+    _kver="$(uname -r)"
+    _builtin="/lib/modules/${_kver}/modules.builtin"
+    if [ -f "${_builtin}" ] && grep -qE "(^|/)${_drv}\.ko$" "${_builtin}"; then
+        echo "  ✓ ${_drv} : builtin (modules.builtin pour ${_kver})"
+        return 0
+    fi
+    # 3) Disponible comme module externe ?
+    if modinfo "${_drv}" >/dev/null 2>&1; then
+        echo "  ✓ ${_drv} : disponible (modinfo)"
+        modprobe "${_drv}" 2>/dev/null || true
+        return 0
+    fi
+    echo "  ❌ ${_drv} : INTROUVABLE (politique 200.3.3 violée)" >&2
+    return 1
+}
+
+check_hv_driver hv_netvsc
+check_hv_driver hv_storvsc
+
+# Garantir le chargement au boot (no-op si builtin, mais documente l'intention)
+cat > /etc/modules-load.d/azure-hyperv.conf <<'EOF'
+# Drivers Hyper-V Azure — Politique Marketplace 200.3.3 (Issue #4 T6)
+# Si ces modules sont builtin, ces lignes sont ignorées silencieusement.
+hv_netvsc
+hv_storvsc
+hv_vmbus
+EOF
+echo "[01-install-base] [T6] /etc/modules-load.d/azure-hyperv.conf créé."
+
+# ---------------------------------------------------------------------------
 # 3. Locales et timezone (Canada/francophone)
 # ---------------------------------------------------------------------------
 echo "[01-install-base] Configuration des locales et timezone..."

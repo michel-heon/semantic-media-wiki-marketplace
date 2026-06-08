@@ -199,7 +199,8 @@ phase_image() {
         for id in IMAGE-01 IMAGE-02 IMAGE-03 IMAGE-04 IMAGE-05 \
                   IMAGE-06 IMAGE-07 IMAGE-08 IMAGE-09 IMAGE-10 \
                   CERT-01 CERT-02 CERT-03 CERT-04 \
-                  CERT-05a CERT-05b CERT-05c CERT-05d CERT-05e; do
+                  CERT-05a CERT-05b CERT-05c CERT-05d CERT-05e \
+                  CERT-06a CERT-06b CERT-06c; do
             skip "T-${id}: VM '${VM_NAME}' introuvable dans '${E2E_RG}'"
         done
         return 0
@@ -299,6 +300,16 @@ phase_image() {
         "V=\$(dpkg -s bind9-libs 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 1:9.18.39-0ubuntu0.22.04.4"
     _ssh_check "T-CERT-05e" "USN-8306-1 libwbclient0 >= 2:4.15.13+dfsg-0ubuntu1.12" \
         "V=\$(dpkg -s libwbclient0 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 2:4.15.13+dfsg-0ubuntu1.12"
+
+    # T-CERT-06 (T6) : Drivers Hyper-V disponibles (chargés OU builtin) — Politique 200.3.3
+    # Sur Ubuntu Azure, hv_netvsc et hv_storvsc sont généralement builtin.
+    # On accepte les deux : présent dans lsmod OU dans modules.builtin.
+    _ssh_check "T-CERT-06a" "Driver hv_netvsc chargé ou builtin (Hyper-V network)" \
+        "lsmod | awk '{print \$1}' | grep -qx hv_netvsc || grep -qE '(^|/)hv_netvsc\\.ko\$' /lib/modules/\$(uname -r)/modules.builtin"
+    _ssh_check "T-CERT-06b" "Driver hv_storvsc chargé ou builtin (Hyper-V storage)" \
+        "lsmod | awk '{print \$1}' | grep -qx hv_storvsc || grep -qE '(^|/)hv_storvsc\\.ko\$' /lib/modules/\$(uname -r)/modules.builtin"
+    _ssh_check "T-CERT-06c" "Fichier /etc/modules-load.d/azure-hyperv.conf présent" \
+        "test -f /etc/modules-load.d/azure-hyperv.conf"
 }
 
 # ---------------------------------------------------------------------------
