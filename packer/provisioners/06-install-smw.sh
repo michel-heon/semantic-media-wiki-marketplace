@@ -124,8 +124,17 @@ enableSemantics( $wgServer ?? 'localhost' );
 # Semantic Result Formats
 wfLoadExtension( 'SemanticResultFormats' );
 
-# Maps
-wfLoadExtension( 'Maps' );
+# Maps — chargement retardé après l'initialisation complète de SMW
+# Workaround : Maps 12.x a un problème d'ordre de chargement avec SMW 6.0.1
+# Maps/src/SemanticMapsSetup.php utilise "use SMW\DataItems\DataItem" au niveau
+# du fichier, ce qui déclenche l'autoloader avant que SMW soit complètement initialisé.
+# Solution : charger Maps dans un hook qui s'exécute après SMW::initExtension
+$wgExtensionFunctions[] = function() {
+    if ( !defined( 'SMW_VERSION' ) ) {
+        return; // SMW not loaded, skip Maps
+    }
+    wfLoadExtension( 'Maps' );
+};
 PHP
 
 chown www-data:www-data "${MW_DIR}/LocalSettings.php"

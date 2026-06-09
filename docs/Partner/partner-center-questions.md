@@ -98,8 +98,15 @@ lors de la création et configuration de l'offre **Azure Virtual Machine** pour 
 | Champ | Valeur |
 |-------|--------|
 | **Name** | `Cotechnoe SMW — Linked Open Data Wiki Platform` |
-| **Search results summary** | `Cotechnoe SMW: self-hosted Linked Open Data wiki on Azure — built on Semantic MediaWiki. Pre-configured, hardened stack. Deploy in minutes.` |
-| **Privacy policy URL** | `https://github.com/Cotechnoe/server-azure-marketplace-docs/blob/main/PRIVACY.md` |
+| **Search results summary** | `Self-hosted Linked Open Data wiki platform with built-in knowledge-graph and SPARQL endpoint.` |
+| **Privacy policy URL** | `https://github.com/Cotechnoe/smw6-azure-marketplace-docs/blob/main/PRIVACY.md` |
+
+> **Conformité (validé 2026-06-08)** :
+> - Title 46/50 chars, conforme 100.7.1 (aucune marque tierce).
+> - Search results summary **94/100 chars** (réduit de 139 → 94 le 2026-06-08).
+>   - Avant : `Cotechnoe SMW: self-hosted Linked Open Data wiki on Azure — built on Semantic MediaWiki. Pre-configured, hardened stack. Deploy in minutes.` (139 chars, **dépassait 100** et contenait "Azure" + "MediaWiki" — risque 100.7.1).
+>   - Après : version épurée sans marques tierces, sous le seuil 100.
+> - Privacy policy URL corrigé : `server-azure-marketplace-docs` → `smw6-azure-marketplace-docs` (vrai nom du repo).
 
 ### Short description (≤ 2 047 chars)
 

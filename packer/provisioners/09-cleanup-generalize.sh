@@ -59,21 +59,125 @@ apt-get clean
 rm -rf /var/lib/apt/lists/*
 
 # ---------------------------------------------------------------------------
-# 4. Nettoyage des historiques bash et SSH known_hosts
+# 4. Nettoyage des historiques bash et SSH known_hosts + authorized_keys (T4)
+#    Politique Microsoft Marketplace 200.5 — clés SSH de build supprimées.
 # ---------------------------------------------------------------------------
 echo "[09-cleanup-generalize] Nettoyage des historiques utilisateurs..."
 
 # root
 truncate -s 0 /root/.bash_history 2>/dev/null || true
 rm -f /root/.ssh/known_hosts 2>/dev/null || true
+rm -f /root/.ssh/authorized_keys 2>/dev/null || true
 
-# ubuntu (utilisateur par défaut Azure Marketplace)
+# ubuntu (utilisateur par défaut Azure Marketplace) + tout user supplémentaire
 for user_home in /home/*; do
     if [[ -d "${user_home}" ]]; then
         truncate -s 0 "${user_home}/.bash_history" 2>/dev/null || true
         rm -f "${user_home}/.ssh/known_hosts" 2>/dev/null || true
+        rm -f "${user_home}/.ssh/authorized_keys" 2>/dev/null || true
     fi
 done
+
+echo "[09-cleanup-generalize] [T4] Validation suppression authorized_keys..."
+if find /root/.ssh /home/*/.ssh -name authorized_keys 2>/dev/null | grep -q .; then
+    echo "[09-cleanup-generalize] ❌ ERREUR : authorized_keys résiduels détectés" >&2
+    find /root/.ssh /home/*/.ssh -name authorized_keys 2>/dev/null >&2
+    exit 1
+fi
+echo "[09-cleanup-generalize] [T4] ✅ Aucun authorized_keys résiduel"
+
+# ---------------------------------------------------------------------------
+# 4.b Désactivation du swap sur disque OS (T3 — Politique 200.3.3)
+#     Azure exige aucune partition swap sur le disque OS.
+#     Swap géré ultérieurement via le resource disk éphémère par cloud-init.
+# ---------------------------------------------------------------------------
+echo "[09-cleanup-generalize] [T3] Désactivation du swap OS disk..."
+swapoff -a || true
+# Retire toutes les entrées swap du fstab (commentées ou non)
+sed -i.bak '/\sswap\s/d' /etc/fstab
+# Validation
+if grep -E '^[^#].*\sswap\s' /etc/fstab; then
+    echo "[09-cleanup-generalize] ❌ ERREUR : entrée swap résiduelle dans /etc/fstab" >&2
+    exit 1
+fi
+if swapon --show 2>/dev/null | grep -q .; then
+    echo "[09-cleanup-generalize] ❌ ERREUR : swap actif après swapoff" >&2
+    swapon --show >&2
+    exit 1
+fi
+echo "[09-cleanup-generalize] [T3] ✅ Swap désactivé et purgé de /etc/fstab"
+# Supprimer le backup généré par sed (sinon il reste dans l'image)
+rm -f /etc/fstab.bak
+
+# ---------------------------------------------------------------------------
+# 4.c Audit des cron jobs et journaux sensibles (T7 — Politique 200.5)
+#     Inventaire de tout cron non-OS et garantie d'absence de credentials
+#     dans les logs applicatifs résiduels (LocalSettings.php, etc.).
+# ---------------------------------------------------------------------------
+echo "[09-cleanup-generalize] [T7] Audit des cron jobs..."
+
+# Inventaire — pour traçabilité (visible dans log Packer)
+echo "  → /etc/crontab :"
+[ -f /etc/crontab ] && grep -vE '^(#|$)' /etc/crontab || echo "  (vide ou absent)"
+
+echo "  → /etc/cron.d/ :"
+if [ -d /etc/cron.d ]; then
+    for _f in /etc/cron.d/*; do
+        [ -f "${_f}" ] && echo "    $(basename "${_f}"): $(grep -vEc '^(#|$)' "${_f}" || echo 0) entrées actives"
+    done
+fi
+
+echo "  → /etc/cron.{hourly,daily,weekly,monthly}/ :"
+for _period in hourly daily weekly monthly; do
+    _dir="/etc/cron.${_period}"
+    if [ -d "${_dir}" ]; then
+        _files=$(find "${_dir}" -maxdepth 1 -type f ! -name '.*' 2>/dev/null | wc -l)
+        echo "    ${_period}: ${_files} script(s)"
+    fi
+done
+
+echo "  → crontabs utilisateurs (/var/spool/cron/crontabs/) :"
+if [ -d /var/spool/cron/crontabs ]; then
+    _user_crons=$(find /var/spool/cron/crontabs -maxdepth 1 -type f 2>/dev/null | wc -l)
+    echo "    ${_user_crons} crontab utilisateur(s)"
+fi
+
+echo "  → systemd timers actifs :"
+systemctl list-timers --no-pager --no-legend 2>/dev/null \
+    | awk '{print "    " $NF}' | head -20 || echo "    (aucun)"
+
+# Politique : aucun cron applicatif SMW/MediaWiki ne doit avoir été ajouté
+# sans documentation. On vérifie l'absence de crontabs utilisateurs créés
+# par les provisioners (root/www-data en particulier).
+echo "[09-cleanup-generalize] [T7] Validation absence de crontabs applicatifs non-documentés..."
+for _user in www-data mysql apache; do
+    if [ -f "/var/spool/cron/crontabs/${_user}" ]; then
+        echo "[09-cleanup-generalize] ⚠ AVERTISSEMENT : crontab ${_user} détecté — vérifier intention" >&2
+        cat "/var/spool/cron/crontabs/${_user}" >&2
+    fi
+done
+
+# Garantir absence de credentials clairs dans les logs résiduels avant capture.
+# (Les logs ont été vidés en section 2, mais on vérifie qu'aucun nouveau log
+#  écrit ensuite ne contienne de pattern sensible.)
+echo "[09-cleanup-generalize] [T7] Scan logs résiduels pour credentials clairs..."
+_susp=0
+for _log in /var/log/syslog /var/log/auth.log /var/log/cloud-init-output.log \
+            /var/log/smw-install.log; do
+    if [ -s "${_log}" ] 2>/dev/null; then
+        # Patterns à risque : mot de passe ou clé privée en clair
+        if grep -aEi 'password[[:space:]]*=[[:space:]]*[^"$ ]+|BEGIN (RSA|OPENSSH) PRIVATE KEY' \
+               "${_log}" 2>/dev/null | grep -v '^#' | head -3; then
+            echo "[09-cleanup-generalize] ⚠ Pattern sensible détecté dans ${_log}" >&2
+            _susp=$((_susp + 1))
+        fi
+    fi
+done
+if [ "${_susp}" -gt 0 ]; then
+    echo "[09-cleanup-generalize] ❌ ERREUR : ${_susp} log(s) contiennent possiblement des credentials" >&2
+    exit 1
+fi
+echo "[09-cleanup-generalize] [T7] ✅ Aucun credential clair dans les logs résiduels"
 
 # ---------------------------------------------------------------------------
 # 5. Nettoyage des fichiers temporaires de build

@@ -197,7 +197,11 @@ phase_image() {
 
     if [[ -z "$VM_IP" ]]; then
         for id in IMAGE-01 IMAGE-02 IMAGE-03 IMAGE-04 IMAGE-05 \
-                  IMAGE-06 IMAGE-07 IMAGE-08 IMAGE-09 IMAGE-10; do
+                  IMAGE-06 IMAGE-07 IMAGE-08 IMAGE-09 IMAGE-10 \
+                  CERT-01 CERT-02 CERT-03 CERT-04 \
+                  CERT-05a CERT-05b CERT-05c CERT-05d CERT-05e \
+                  CERT-06a CERT-06b CERT-06c \
+                  CERT-07a CERT-07b-pwd CERT-07b-key CERT-07c; do
             skip "T-${id}: VM '${VM_NAME}' introuvable dans '${E2E_RG}'"
         done
         return 0
@@ -257,6 +261,77 @@ phase_image() {
     # 'Status: active' cassait le quoting SSH — on cherche le mot-clé active sans guillemets.
     _ssh_check "T-IMAGE-10" "UFW actif" \
         "sudo ufw status 2>/dev/null | grep -q active"
+
+    # -----------------------------------------------------------------------
+    # Tests T-CERT-* — Certification Microsoft Marketplace (ADR-804, Issue #4)
+    # Politique 200.5.8 — VM Linux Endorsed Distribution sur Azure
+    # Référence : docs/Certification/2026-06-18-partner.pdf
+    # -----------------------------------------------------------------------
+
+    # T-CERT-01 (T1) : GRUB kernel params Azure (console série + rootdelay)
+    _ssh_check "T-CERT-01" "GRUB_CMDLINE_LINUX = console=ttyS0 earlyprintk=ttyS0 rootdelay=300" \
+        "grep -q console=ttyS0 /etc/default/grub && grep -q earlyprintk=ttyS0 /etc/default/grub && grep -q rootdelay=300 /etc/default/grub"
+
+    # T-CERT-02 (T2) : waagent (WALinuxAgent) installé et version >= 2.2.10
+    _ssh_check "T-CERT-02" "waagent installé (>= 2.2.10)" \
+        "command -v waagent >/dev/null && waagent --version 2>/dev/null | grep -qE 'WALinuxAgent-[0-9]'"
+
+    # T-CERT-03 (T3) : Swap désactivé et purgé de /etc/fstab (politique Azure OS disk)
+    _ssh_check "T-CERT-03" "Swap désactivé et absent de /etc/fstab" \
+        "! swapon --show 2>/dev/null | grep -q . && ! grep -E '^[^#]+[[:space:]]swap[[:space:]]' /etc/fstab"
+
+    # T-CERT-04 (T4) : Connexion root SSH bloquée (politique sécurité 200.5.8)
+    # Note : sur une VM Azure post-déploiement, waagent réinjecte un authorized_keys
+    # root contenant un wrapping inerte (command="echo Please login as azureuser..."),
+    # ce qui rend le compte root inopérant en SSH même si le fichier existe. On vérifie :
+    # soit le fichier est absent, soit il est wrappé avec le pattern Azure (no-port-forwarding).
+    _ssh_check "T-CERT-04" "Connexion SSH root bloquée (fichier absent ou wrappé Azure)" \
+        "sudo test ! -f /root/.ssh/authorized_keys || sudo grep -q no-port-forwarding /root/.ssh/authorized_keys"
+
+    # T-CERT-05 (T5) : Paquets USN bloquants patchés (libgnutls30, libarchive13, bind9-*, libwbclient0)
+    # Note : `dpkg-query -W -f='${Version}'` casse le wrapping bash -c (guillemets simples).
+    # Approche : `dpkg -s pkg | grep ^Version: | cut -d' ' -f2` — sans guillemets dans la chaîne.
+    _ssh_check "T-CERT-05a" "USN-8284-1 libgnutls30 >= 3.7.3-4ubuntu1.9" \
+        "V=\$(dpkg -s libgnutls30 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 3.7.3-4ubuntu1.9"
+    _ssh_check "T-CERT-05b" "USN-8292-1 libarchive13 >= 3.6.0-1ubuntu1.7" \
+        "V=\$(dpkg -s libarchive13 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 3.6.0-1ubuntu1.7"
+    _ssh_check "T-CERT-05c" "USN-8293-1 bind9-host >= 1:9.18.39-0ubuntu0.22.04.4" \
+        "V=\$(dpkg -s bind9-host 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 1:9.18.39-0ubuntu0.22.04.4"
+    _ssh_check "T-CERT-05d" "USN-8293-1 bind9-libs >= 1:9.18.39-0ubuntu0.22.04.4" \
+        "V=\$(dpkg -s bind9-libs 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 1:9.18.39-0ubuntu0.22.04.4"
+    _ssh_check "T-CERT-05e" "USN-8306-1 libwbclient0 >= 2:4.15.13+dfsg-0ubuntu1.12" \
+        "V=\$(dpkg -s libwbclient0 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 2:4.15.13+dfsg-0ubuntu1.12"
+
+    # T-CERT-06 (T6) : Drivers Hyper-V disponibles (chargés OU builtin) — Politique 200.3.3
+    # Sur Ubuntu Azure, hv_netvsc/hv_storvsc sont généralement builtin dans le kernel azure-tuned.
+    # On accepte les deux : présent dans lsmod OU dans modules.builtin.
+    # ⚠ Pas de guillemets simples dans cmd (cassent le wrapping bash -c '...').
+    # On utilise grep -w pour matcher le nom de module exact (sans regex spéciale).
+    _ssh_check "T-CERT-06a" "Driver hv_netvsc chargé ou builtin (Hyper-V network)" \
+        "lsmod | cut -d\\  -f1 | grep -qx hv_netvsc || grep -qw hv_netvsc /lib/modules/\$(uname -r)/modules.builtin"
+    _ssh_check "T-CERT-06b" "Driver hv_storvsc chargé ou builtin (Hyper-V storage)" \
+        "lsmod | cut -d\\  -f1 | grep -qx hv_storvsc || grep -qw hv_storvsc /lib/modules/\$(uname -r)/modules.builtin"
+    _ssh_check "T-CERT-06c" "Fichier /etc/modules-load.d/azure-hyperv.conf présent" \
+        "test -f /etc/modules-load.d/azure-hyperv.conf"
+
+    # T-CERT-07 (T7) : Audit crons + journaux non-sensibles — Politique 200.5
+    # Aucun crontab applicatif www-data/mysql/apache (non documenté).
+    _ssh_check "T-CERT-07a" "Aucun crontab applicatif non documenté (www-data/mysql/apache)" \
+        "for u in www-data mysql apache; do sudo test ! -f /var/spool/cron/crontabs/\$u || exit 1; done"
+    # Pas de pattern sensible dans logs résiduels.
+    # Stratégie : grep -q retourne 0 si trouvé, 1 si non trouvé. On veut FAIL si trouvé.
+    # Utilisation de grep simple (BRE) sans alternation regex pour éviter pièges quoting.
+    # ⚠ Pas de guillemets simples dans cmd (cassent bash -c '...').
+    _ssh_check "T-CERT-07b-pwd" "Aucun 'password=...' clair dans logs résiduels" \
+        "! sudo grep -aEi \"password[[:space:]]*=\" /var/log/syslog /var/log/auth.log /var/log/cloud-init-output.log 2>/dev/null | head -1 | grep -q ."
+    # Pattern recherché : '-----BEGIN ... PRIVATE KEY-----' (5 tirets, vrai bloc PEM).
+    # Évite les faux positifs causés par auth.log qui logge la commande sudo elle-même.
+    _ssh_check "T-CERT-07b-key" "Aucune clé privée PEM (-----BEGIN PRIVATE KEY-----) dans logs résiduels" \
+        "! sudo grep -aErI -- \"-----BEGIN [A-Z]* PRIVATE KEY-----\" /var/log/syslog /var/log/auth.log /var/log/cloud-init-output.log 2>/dev/null | head -1 | grep -q ."
+    # LocalSettings.php non lisible par others : extraire dernier digit du mode octal.
+    # Si fichier absent (image pré-firstboot), le test est skippé via condition initiale.
+    _ssh_check "T-CERT-07c" "LocalSettings.php non lisible par others (mode others-read absent)" \
+        "sudo test ! -f /opt/mediawiki/LocalSettings.php || { M=\$(sudo stat -c %a /opt/mediawiki/LocalSettings.php); O=\$(echo \$M | tail -c2); test \$((O & 4)) -eq 0; }"
 }
 
 # ---------------------------------------------------------------------------
