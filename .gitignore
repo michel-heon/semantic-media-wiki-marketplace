@@ -1,0 +1,50 @@
+# .gitignore — Semantic MediaWiki Marketplace
+# ADR-600 — Bootstrap et Gestion de la Configuration
+
+# ---------------------------------------------------------------------------
+# Fichiers de configuration secrets — NE JAMAIS commiter
+# ---------------------------------------------------------------------------
+env/.env.dev.user
+env/.env.*.user
+
+# ---------------------------------------------------------------------------
+# Fichiers générés automatiquement par 'make config'
+# ---------------------------------------------------------------------------
+env/generated/
+
+# ---------------------------------------------------------------------------
+# Fichiers générés par Packer
+# ---------------------------------------------------------------------------
+packer/generated.pkrvars.hcl
+packer/.packer_cache/
+*.pkr.hcl.lock
+
+# ---------------------------------------------------------------------------
+# Fichiers temporaires système
+# ---------------------------------------------------------------------------
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ---------------------------------------------------------------------------
+# Logs locaux
+# ---------------------------------------------------------------------------
+*.log
+logs/
+
+# ---------------------------------------------------------------------------
+# Tests — dépendances npm partagées
+# ---------------------------------------------------------------------------
+tests/node_modules/
+tests/package-lock.json
+
+# Tests navigateur E2E (Playwright)
+# ---------------------------------------------------------------------------
+tests/e2e/test-results/
+tests/e2e/playwright-report/
+
+# Credentials smoke tests — ne pas committer (voir env.example)
+# ---------------------------------------------------------------------------
+tests/user-smoke/env
