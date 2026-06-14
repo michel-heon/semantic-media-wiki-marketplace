@@ -106,6 +106,8 @@ git commit -m "docs(adr): ADR-201 [INFRA] Nouvelle décision"
 | [616](./616-DEVOPS-blob-storage-cache-packages-packer.md) | Blob Storage Azure comme Cache de Packages pour les Builds Packer | ✅ Accepté | 2026-05-08 | DevOps |
 | [617](./617-DEVOPS-packer-outil-construction-images-vm.md) | HashiCorp Packer — Outil de Construction d'Images VM Azure | ✅ Accepté | 2026-05-09 | DevOps |
 | [618](./618-DEVOPS-strategie-debug-post-image-vm.md) | Stratégie de Débogage Post-Image : Cycle Observation VM → Correction Provisioner | ✅ Accepté | 2026-05-15 | DevOps |
+| [619](./619-DEVOPS-registre-drift-vm-live-vs-packer.md) | Registre des Drifts VM Live ↔ Packer — Traçabilité des Hotfix à Propager | ✅ Accepté | 2026-06-14 | DevOps |
+| [620](./620-DEVOPS-maintenance-proxy-ctt-marketplace.md) | Maintenance du proxy CTT — Ajustement de marketplace-ctt.sh à chaque nouveau rapport Partner Center | ✅ Accepté | 2026-06-14 | DevOps |
 
 ---
 
@@ -126,6 +128,7 @@ git commit -m "docs(adr): ADR-201 [INFRA] Nouvelle décision"
 | [800](./800-BIZ-publication-azure-marketplace-vm-offer.md) | Publication Offre VM sur Azure Marketplace — Conformité et Bonnes Pratiques Microsoft | ✅ Accepté | 2026-02-21 | BIZ |
 | [801](./801-BIZ-strategie-documentation-marketplace.md) | Stratégie de Documentation — Offre Azure Marketplace (utilisateur final) | ✅ Accepté | 2026-03-05 | BIZ |
 | [804](./804-BIZ-politiques-certification-microsoft-marketplace.md) | Politiques de Certification Microsoft Marketplace — Conformité Offre VM SMW | ✅ Accepté | 2026-06-08 | BIZ |
+| [805](./805-BIZ-nomenclature-uniforme-titres-offres-marketplace.md) | Nomenclature Uniforme des Titres d'Offres Azure Marketplace — Cotechnoe | ✅ Accepté | 2026-06-14 | BIZ |
 
 ---
 
@@ -133,12 +136,12 @@ git commit -m "docs(adr): ADR-201 [INFRA] Nouvelle décision"
 
 | Indicateur | Valeur |
 |-----------|--------|
-| **Total ADRs** | 22 |
-| **Acceptés** | 22 |
+| **Total ADRs** | 25 |
+| **Acceptés** | 25 |
 | **Dépréciés** | 0 |
 | **Proposés** | 0 |
 | **Brouillons** | 0 |
-| **Par Domaine** | META: 3, INFRA: 1, SEC: 3, DEVOPS: 13, BIZ: 2 |
+| **Par Domaine** | META: 3, INFRA: 1, SEC: 3, DEVOPS: 15, BIZ: 2 |
 
 ---
 
@@ -152,7 +155,7 @@ git commit -m "docs(adr): ADR-201 [INFRA] Nouvelle décision"
 | `SEC` | 300-399 | TLS, NSG, conformité Marketplace | 304 |
 | `DATA` | 400-499 | Données sémantiques, propriétés SMW, ontologies | 400 |
 | `API` | 500-599 | API MediaWiki, intégrations | 500 |
-| `DEVOPS` | 600-699 | CI/CD, scripts provisioning | 618 |
+| `DEVOPS` | 600-699 | CI/CD, scripts provisioning | 621 |
 | `TEST` | 700-799 | Validation Marketplace, smoke tests | 701 |
 | `BIZ` | 800-899 | Offre Marketplace, licensing | 802 |
 
@@ -180,4 +183,4 @@ git commit -m "docs(adr): ADR-201 [INFRA] Nouvelle décision"
 
 ---
 
-_Mise à jour : 2026-03-11_
+_Mise à jour : 2026-06-14_

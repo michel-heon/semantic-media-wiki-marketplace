@@ -12,6 +12,7 @@ docs/
 ├── architecture/                 Diagrammes et notes d'architecture
 ├── Partner/                      Contenu Partner Center (champs, logos)
 ├── Certification/                Rapports de certification Azure
+├── vm-live-drift/                Registre des écarts VM live ↔ Packer (ADR-619)
 ├── scrum/                        Backlog, épopées, sprints
 ├── screenshots/                  Captures visuelles de l'offre
 ├── cotechnoe.github.io           Sous-module site GitHub Pages
@@ -61,6 +62,17 @@ docs/
 ## Certification
 
 [`docs/Certification/`](./Certification/) — Rapports de résultats de certification Azure Marketplace.
+
+---
+
+## VM Live Drift Registry
+
+[`docs/vm-live-drift/`](./vm-live-drift/) — Registre des écarts entre l'image
+SMW VM publiée (gallery / Marketplace) et le code Packer du repo. Garantit
+la traçabilité bidirectionnelle entre rapport Partner Center, fix Packer
+et image publiée.
+
+→ Décision fondatrice : [ADR-619](./adr/619-DEVOPS-registre-drift-vm-live-vs-packer.md).
 
 ---
 

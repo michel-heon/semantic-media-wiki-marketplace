@@ -93,7 +93,9 @@ if ! command -v waagent >/dev/null 2>&1; then
 fi
 
 # ---------------------------------------------------------------------------
-# 2.b Validation des 4 USN bloquants (ADR-804 / Rapport 2026-06-18)
+# 2.b Validation des USN bloquants AMAT 200.5.8
+#     Sources : rapports Partner Center 2026-06-02 et 2026-06-13
+#     ADR-300 §9 (Test #16), ADR-619 (DRIFT-000), ADR-804
 # ---------------------------------------------------------------------------
 echo "[01-install-base] [T5] Vérification des versions de paquets USN..."
 check_pkg_min_version() {
@@ -111,11 +113,17 @@ check_pkg_min_version() {
         return 1
     fi
 }
-check_pkg_min_version libgnutls30  "3.7.3-4ubuntu1.9"
-check_pkg_min_version libarchive13 "3.6.0-1ubuntu1.7"
-check_pkg_min_version bind9-host   "1:9.18.39-0ubuntu0.22.04.4"
-check_pkg_min_version bind9-libs   "1:9.18.39-0ubuntu0.22.04.4"
-check_pkg_min_version libwbclient0 "2:4.15.13+dfsg-0ubuntu1.12"
+# USN-8284-1 — GnuTLS (CVSS3 8.8)
+check_pkg_min_version libgnutls30    "3.7.3-4ubuntu1.9"
+# USN-8292-1 — libarchive (CVSS3 8.5)
+check_pkg_min_version libarchive13   "3.6.0-1ubuntu1.7"
+# USN-8293-1 — Bind 9 (CVSS3 8.5) — 3 paquets dont bind9-dnsutils
+# explicitement listé par Qualys dans les rapports Partner Center
+check_pkg_min_version bind9-host     "1:9.18.39-0ubuntu0.22.04.4"
+check_pkg_min_version bind9-dnsutils "1:9.18.39-0ubuntu0.22.04.4"
+check_pkg_min_version bind9-libs     "1:9.18.39-0ubuntu0.22.04.4"
+# USN-8306-1 — Samba/libwbclient (CVSS3 8.5)
+check_pkg_min_version libwbclient0   "2:4.15.13+dfsg-0ubuntu1.12"
 
 # ---------------------------------------------------------------------------
 # 2.c Paramètres kernel GRUB (T1 — Politique 200.4)

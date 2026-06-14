@@ -5,7 +5,7 @@ status: "accepted"
 date: 2026-02-22
 superseded_by: null
 replaces: null
-related_adrs: [200, 800]
+related_adrs: [200, 619, 700, 800, 804]
 related_issues: [4, 29]
 
 classification:
@@ -158,13 +158,43 @@ sudo waagent -deprovision+user -force
 
 ### 8. Mise à Jour OS Avant Généralisation
 
+Utilisation de `dist-upgrade` (au lieu de `upgrade`) pour capter les transitions de dépendances entre paquets (ex. : `libgnutls30`, `libarchive13`, `bind9-*`, `libwbclient0`). Implémenté dans `packer/provisioners/01-install-base.sh` §1 :
+
 ```bash
-apt-get update && apt-get upgrade -y && apt-get autoremove -y
+apt-get update -y
+APT_OPTS=(-y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
+apt-get upgrade "${APT_OPTS[@]}"
+apt-get dist-upgrade "${APT_OPTS[@]}"
+apt-get autoremove -y && apt-get autoclean -y
 ```
+
+### 9. Vérification déterministe — Test #16 Patches CVE (rapports 2026-06-02 / 2026-06-13)
+
+Un **gate bloquant** (`return 1` propagé par `set -euo pipefail`) dans
+`packer/provisioners/01-install-base.sh` §2.b vérifie, après `dist-upgrade`,
+que chaque paquet exposé par la certification AMAT 200.5.8 (rapport Partner
+Center du `2026-06-13` sur le plan `standard/6.0.20260517`) est à la version
+minimale requise :
+
+| Paquet            | Version requise (USN)              | USN                                                       |
+|-------------------|------------------------------------|-----------------------------------------------------------|
+| `libgnutls30`     | ≥ `3.7.3-4ubuntu1.9`               | [USN-8284-1](https://ubuntu.com/security/notices/USN-8284-1) |
+| `libarchive13`    | ≥ `3.6.0-1ubuntu1.7`               | [USN-8292-1](https://ubuntu.com/security/notices/USN-8292-1) |
+| `bind9-host`, `bind9-dnsutils`, `bind9-libs` | ≥ `1:9.18.39-0ubuntu0.22.04.4` | [USN-8293-1](https://ubuntu.com/security/notices/USN-8293-1) |
+| `libwbclient0`    | ≥ `2:4.15.13+dfsg-0ubuntu1.12`     | [USN-8306-1](https://ubuntu.com/security/notices/USN-8306-1) |
+
+Si un paquet est sous la version requise, le build Packer **échoue** (la
+fonction `check_pkg_min_version` retourne `1`, `set -e` interrompt le
+provisioner) et la version installée est tracée dans le log de l'image
+(`/var/log/smw-install.log`, purgé par `09-cleanup-generalize.sh`).
+
+> **Note** : le gate s'exécute **avant** la généralisation, donc une image
+> qui passerait toutes les étapes mais échouerait sur Test #16 ne pourrait
+> **pas** être publiée — par construction.
 
 ---
 
-## ✅ Checklist 15 Tests Certification Microsoft
+## ✅ Checklist 16 Tests Certification Microsoft
 
 | # | Test | Décision | Provisioner |
 |---|------|----------|-------------|
@@ -180,9 +210,10 @@ apt-get update && apt-get upgrade -y && apt-get autoremove -y
 | 10 | Port 8983 non exposé publiquement | ✅ | `security-harden.sh` + NSG |
 | 11 | OS disk < 2 048 GB | ✅ | Packer config |
 | 12 | 2 048 premiers secteurs libres | ✅ | Image Ubuntu endorsée |
-| 13 | Mise à jour OS récente | ✅ | `security-harden.sh` |
+| 13 | Mise à jour OS récente (`dist-upgrade`) | ✅ | `01-install-base.sh` |
 | 14 | `cloud-init` opérationnel | ✅ | `waagent-cloud-init.sh` |
 | 15 | Extensions Azure acceptées (`allowExtensionOperations`) | ✅ | `waagent-cloud-init.sh` |
+| 16 | Patches CVE Ubuntu — paquets ≥ versions USN (200.5.8 — rapport 2026-06-13) | ✅ | `01-install-base.sh` (gate bloquant §2.b) |
 
 ---
 
@@ -190,22 +221,45 @@ apt-get update && apt-get upgrade -y && apt-get autoremove -y
 
 ```
 packer/provisioners/
-  01-install-base.sh          ← curl, wget, ufw, outils système
+  01-install-base.sh          ← curl, wget, ufw, dist-upgrade, gate USN, waagent
   02-install-php.sh           ← PHP 8.2-fpm + extensions MediaWiki
   03-install-apache.sh        ← Apache 2.4 + mod_proxy_fcgi
   04-install-mysql.sh         ← MySQL 8.x + base de données wiki
   05-install-mediawiki.sh     ← MediaWiki 1.43.x + configuration
-  06-security-harden.sh       ← SSH config + UFW + permissions + apt upgrade
   06-install-smw.sh           ← Semantic MediaWiki 6.0.1 + extensions SSO
-  08-generalize.sh            ← cleanup + waagent -deprovision+user  ← TOUJOURS DERNIER
+  07-security-harden.sh       ← UFW + SSH + fail2ban + auditd + TLS Apache
+  08-firstboot-setup.sh       ← service systemd smw-firstboot.service
+  09-cleanup-generalize.sh    ← cleanup + waagent -deprovision+user  ← TOUJOURS DERNIER
 ```
+
+---
+
+## 🔁 Suivi des écarts VM live ↔ Packer
+
+Toute correction de hardening appliquée à chaud sur une VM live (sans passer
+par Packer), ou tout écart constaté entre une image gallery publiée et le
+code Packer du repo, **DOIT** être consignée dans `docs/vm-live-drift/REGISTRY.md`
+afin d'être propagée dans le code Packer et d'éviter qu'une nouvelle image
+réintroduise le problème — ou qu'un plan vulnérable continue d'être publié
+alors que le fix est déjà committé.
+
+- Voir [`docs/vm-live-drift/README.md`](../vm-live-drift/README.md) — procédure
+- Voir [`docs/vm-live-drift/REGISTRY.md`](../vm-live-drift/REGISTRY.md) — tableau des drifts actifs
+- Voir [ADR-619](./619-DEVOPS-registre-drift-vm-live-vs-packer.md) — décision fondatrice
+
+Drifts hardening en cours :
+
+- [DRIFT-000](../vm-live-drift/DRIFT-000-cve-patches-ubuntu-200.5.8.md) — patches CVE Ubuntu (USN-8284 / 8292 / 8293 / 8306) sur plan `standard/6.0.20260517` (rapport Partner Center 2026-06-13)
 
 ---
 
 ## 📎 Références
 
-- ADR-100 : Architecture Docker → VM (Dockerfiles source de vérité)
 - ADR-200 : Infrastructure Azure (NSG complémentaire à UFW)
-- ADR-700 : Stratégie waagent + généralisation (tests locaux avant Azure)
-- ADR-800 : Publication Azure Marketplace (15 tests certification)
-- Issue #29 : Implémentation hardening OS
+- ADR-619 : Registre des drifts VM Live ↔ Packer (traçabilité des hotfix)
+- ADR-700 : Plan de tests d'intégration (validation provisioners + image + e2e)
+- ADR-800 : Publication Azure Marketplace (16 tests certification)
+- ADR-804 : Politiques certification Microsoft Marketplace (veille CVE)
+- Issue [#4](https://github.com/michel-heon/semantic-media-wiki-marketplace/issues/4) : Certification Marketplace (T1-T11)
+- Rapport `docs/Certification/2026-06-13-partner.pdf` : re-notification CVE 200.5.8
+- Rapport `docs/Certification/2026-06-02-partner.pdf` : première notification mêmes CVE

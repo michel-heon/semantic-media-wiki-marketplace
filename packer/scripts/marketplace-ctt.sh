@@ -321,6 +321,49 @@ test_mediawiki_accessible() {
     fi
 }
 
+test_cve_usn() {
+    local vm="$1"
+    log_test "AMAT 200.5.8 — Patches CVE Ubuntu (USN-8284/8292/8293/8306)"
+
+    # Miroir du gate Packer 01-install-base.sh §2.b
+    # Source : rapports Partner Center 2026-06-02 et 2026-06-13
+    # ADR-300 §9 (Test #16), ADR-619 (DRIFT-000)
+    local result
+    result=$(run_on_vm "$vm" "
+        fail=0
+        check() {
+            local pkg=\$1 min=\$2
+            local cur
+            cur=\$(dpkg-query -W -f='\${Version}' \$pkg 2>/dev/null || echo '')
+            if [ -z \"\$cur\" ]; then
+                echo \"  ? \$pkg : non installé (skip)\"
+                return 0
+            fi
+            if dpkg --compare-versions \"\$cur\" ge \"\$min\"; then
+                echo \"  OK \$pkg \$cur >= \$min\"
+            else
+                echo \"  KO \$pkg \$cur < \$min\"
+                fail=1
+            fi
+        }
+        check libgnutls30    '3.7.3-4ubuntu1.9'
+        check libarchive13   '3.6.0-1ubuntu1.7'
+        check bind9-host     '1:9.18.39-0ubuntu0.22.04.4'
+        check bind9-dnsutils '1:9.18.39-0ubuntu0.22.04.4'
+        check bind9-libs     '1:9.18.39-0ubuntu0.22.04.4'
+        check libwbclient0   '2:4.15.13+dfsg-0ubuntu1.12'
+        echo RESULT=\$fail
+    ")
+
+    if echo "$result" | grep -qE "RESULT=0$"; then
+        log_pass
+    else
+        log_fail "Au moins un paquet USN sous version requise (voir 01-install-base.sh §2.b)"
+        # Afficher les détails pour aider au diagnostic
+        echo "$result" | grep -E "^  (KO|OK|\?)" | sed 's/^/    /'
+    fi
+}
+
 # -----------------------------------------------------------------------------
 # Commandes principales
 # -----------------------------------------------------------------------------
@@ -337,7 +380,8 @@ show_info() {
     printf "  • Résolution DNS\n"
     printf "  • Pas de swap sur OS disk\n"
     printf "  • Bash history nettoyé\n"
-    printf "  • Pas de credentials par défaut\n\n"
+    printf "  • Pas de credentials par défaut\n"
+    printf "  • AMAT 200.5.8 — Patches CVE Ubuntu (gate USN)\n\n"
     printf "  Tests spécifiques SMW:\n"
     printf "  • PHP 8.2-FPM actif\n"
     printf "  • Apache2 actif\n"
@@ -387,6 +431,7 @@ run_validate() {
     test_kernel_params "$vm_name"
     test_no_default_password "$vm_name"
     test_lisa_no_users "$vm_name"
+    test_cve_usn "$vm_name"
 
     # Tests applicatifs SMW
     printf "\n${BOLD}Stack applicative SMW:${NC}\n"
@@ -429,6 +474,7 @@ AVAILABLE_TESTS=(
     "kernel_params:Kernel params console série"
     "no_default_password:Pas de mot de passe par défaut"
     "lisa_no_users:LISA 200.3.3.8 — Pas d'utilisateurs UID >= 1000"
+    "cve_usn:AMAT 200.5.8 — Patches CVE Ubuntu (USN-8284/8292/8293/8306)"
     "php_running:PHP 8.2-FPM actif"
     "apache_running:Apache2 actif"
     "mysql_running:MySQL actif"
@@ -481,6 +527,7 @@ run_single_test() {
         kernel_params)       test_kernel_params "$vm_name" ;;
         no_default_password) test_no_default_password "$vm_name" ;;
         lisa_no_users)       test_lisa_no_users "$vm_name" ;;
+        cve_usn)             test_cve_usn "$vm_name" ;;
         php_running)         test_php_running "$vm_name" ;;
         apache_running)      test_apache_running "$vm_name" ;;
         mysql_running)       test_mysql_running "$vm_name" ;;

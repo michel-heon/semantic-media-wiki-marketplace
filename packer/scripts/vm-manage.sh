@@ -100,6 +100,7 @@ case "$cmd" in
                 --admin-username azureuser \
                 --generate-ssh-keys \
                 --public-ip-sku Standard \
+                --security-type TrustedLaunch \
                 --custom-data "$CUSTOM_DATA_B64" \
                 --output table
             printf "${GREEN}  ✓ VM créée : ${VM_NAME}${NC}\n"
