@@ -174,6 +174,22 @@ phase_static() {
     else
         fail "T-STATIC-10: SSH hardening — PasswordAuthentication no absent de 07-security-harden.sh"
     fi
+
+    # T-STATIC-11 : URL Privacy policy Partner Center correcte (ADR-804, ADR-701)
+    # Détecte la régression observée en certification : URL pointant vers
+    # server-azure-marketplace-docs (404) au lieu du repo canonique smw6-azure-marketplace-docs.
+    local PARTNER_QUESTIONS_FILE="${REPO_ROOT}/docs/Partner/partner-center-questions.md"
+    local PRIVACY_ROW
+    PRIVACY_ROW=$(grep -E '^\| \*\*Privacy policy URL\*\* \|' "$PARTNER_QUESTIONS_FILE" 2>/dev/null | head -1 || true)
+    if [[ -z "$PRIVACY_ROW" ]]; then
+        fail "T-STATIC-11: Privacy policy URL — ligne introuvable dans docs/Partner/partner-center-questions.md"
+    elif [[ "$PRIVACY_ROW" == *"https://github.com/Cotechnoe/smw6-azure-marketplace-docs/blob/main/PRIVACY.md"* ]] && \
+         [[ "$PRIVACY_ROW" != *"server-azure-marketplace-docs"* ]]; then
+        pass "T-STATIC-11: Privacy policy URL — repo canonique smw6-azure-marketplace-docs"
+    else
+        fail "T-STATIC-11: Privacy policy URL — URL invalide (risque 404 Partner Center)"
+        printf "      Ligne détectée: %s\n" "$PRIVACY_ROW"
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -201,6 +217,8 @@ phase_image() {
                   CERT-01 CERT-02 CERT-03 CERT-04 \
                   CERT-05a CERT-05b CERT-05c CERT-05d CERT-05e \
                   CERT-06a CERT-06b CERT-06c \
+                  CERT-08a CERT-08b CERT-08c CERT-08d \
+                  CERT-08e CERT-08f CERT-08g CERT-08h \
                   CERT-07a CERT-07b-pwd CERT-07b-key CERT-07c; do
             skip "T-${id}: VM '${VM_NAME}' introuvable dans '${E2E_RG}'"
         done
@@ -332,6 +350,26 @@ phase_image() {
     # Si fichier absent (image pré-firstboot), le test est skippé via condition initiale.
     _ssh_check "T-CERT-07c" "LocalSettings.php non lisible par others (mode others-read absent)" \
         "sudo test ! -f /opt/mediawiki/LocalSettings.php || { M=\$(sudo stat -c %a /opt/mediawiki/LocalSettings.php); O=\$(echo \$M | tail -c2); test \$((O & 4)) -eq 0; }"
+
+    # T-CERT-08 (T8) : Paquets vulnérables du rapport 2026-07-15 patchés (200.5.8)
+    # Référence : docs/Certification/2026-07-15-Certification-Report.pdf
+    # USN-8456-1 (libxml2), USN-8487-1 (curl/libcurl*), USN-8516-1 (apache2*)
+    _ssh_check "T-CERT-08a" "USN-8456-1 libxml2 >= 2.9.13+dfsg-1ubuntu0.12" \
+        "V=\$(dpkg -s libxml2 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 2.9.13+dfsg-1ubuntu0.12"
+    _ssh_check "T-CERT-08b" "USN-8487-1 curl >= 7.81.0-1ubuntu1.25" \
+        "V=\$(dpkg -s curl 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 7.81.0-1ubuntu1.25"
+    _ssh_check "T-CERT-08c" "USN-8487-1 libcurl3-gnutls >= 7.81.0-1ubuntu1.25" \
+        "V=\$(dpkg -s libcurl3-gnutls 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 7.81.0-1ubuntu1.25"
+    _ssh_check "T-CERT-08d" "USN-8487-1 libcurl4 >= 7.81.0-1ubuntu1.25" \
+        "V=\$(dpkg -s libcurl4 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 7.81.0-1ubuntu1.25"
+    _ssh_check "T-CERT-08e" "USN-8516-1 apache2-data >= 2.4.52-1ubuntu4.23" \
+        "V=\$(dpkg -s apache2-data 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 2.4.52-1ubuntu4.23"
+    _ssh_check "T-CERT-08f" "USN-8516-1 apache2 >= 2.4.52-1ubuntu4.23" \
+        "V=\$(dpkg -s apache2 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 2.4.52-1ubuntu4.23"
+    _ssh_check "T-CERT-08g" "USN-8516-1 apache2-bin >= 2.4.52-1ubuntu4.23" \
+        "V=\$(dpkg -s apache2-bin 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 2.4.52-1ubuntu4.23"
+    _ssh_check "T-CERT-08h" "USN-8516-1 apache2-utils >= 2.4.52-1ubuntu4.23" \
+        "V=\$(dpkg -s apache2-utils 2>/dev/null | grep ^Version: | cut -d\\  -f2); dpkg --compare-versions \$V ge 2.4.52-1ubuntu4.23"
 }
 
 # ---------------------------------------------------------------------------

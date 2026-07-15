@@ -126,7 +126,18 @@ check_pkg_min_version bind9-libs     "1:9.18.39-0ubuntu0.22.04.4"
 check_pkg_min_version libwbclient0   "2:4.15.13+dfsg-0ubuntu1.12"
 
 # ---------------------------------------------------------------------------
-# 2.c Paramètres kernel GRUB (T1 — Politique 200.4)
+# 2.c Validation USN bloquants (rapport Partner Center 2026-07-15)
+#     DRIFT-001 — libxml2, curl/libcurl
+# ---------------------------------------------------------------------------
+# USN-8456-1 — libxml2 (CVSS3 8.8)
+check_pkg_min_version libxml2         "2.9.13+dfsg-1ubuntu0.12"
+# USN-8487-1 — curl / libcurl (CVSS3 8.8)
+check_pkg_min_version curl            "7.81.0-1ubuntu1.25"
+check_pkg_min_version libcurl3-gnutls "7.81.0-1ubuntu1.25"
+check_pkg_min_version libcurl4        "7.81.0-1ubuntu1.25"
+
+# ---------------------------------------------------------------------------
+# 2.d Paramètres kernel GRUB (T1 — Politique 200.4)
 #     Requis : console=ttyS0 earlyprintk=ttyS0 rootdelay=300
 # ---------------------------------------------------------------------------
 echo "[01-install-base] [T1] Configuration paramètres kernel GRUB..."

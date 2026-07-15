@@ -186,7 +186,7 @@ storage-urls: ## Afficher les URLs des packages dans le blob
 E2E_RG ?= rg-smw-marketplace-e2e
 CTT     := packer/scripts/marketplace-ctt.sh
 
-.PHONY: vm-ensure vm-stop vm-start vm-delete vm-status image-id
+.PHONY: vm-ensure vm-stop vm-start vm-delete vm-status image-id pre-submit-smoke
 .PHONY: vm-dns-assign vm-dns-assign-reboot vm-firstboot-reset vm-reset-admin
 .PHONY: marketplace-info marketplace-validate marketplace-all marketplace-test marketplace-tests
 
@@ -244,6 +244,11 @@ marketplace-test: ## Exécuter un test CTT spécifique (TEST=nom VM=vm_name)
 
 marketplace-tests: ## Lister les tests CTT disponibles
 	@bash $(CTT) list
+
+pre-submit-smoke: ## Smoke test pré-soumission Marketplace (E2E + user-smoke) sur VM active
+	$(call log_action,Exécution du smoke test pré-soumission Marketplace...)
+	@E2E_RG=$(E2E_RG) $(if $(VM_IP),VM_IP=$(VM_IP)) bash packer/scripts/pre-submit-smoke.sh
+	$(call log_success,Smoke test pré-soumission terminé)
 
 .PHONY: listing-validate
 listing-validate: ## T9 — Valider conformité description Partner Center (politiques 100.x)

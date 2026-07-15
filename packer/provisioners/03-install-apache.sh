@@ -27,6 +27,31 @@ echo "[03-install-apache] Installation d'Apache 2.4..."
 apt-get install -y apache2
 
 # ---------------------------------------------------------------------------
+# 1.b Validation USN Apache — AMAT 200.5.8 (DRIFT-001)
+#     Rapport Partner Center 2026-07-15 — USN-8516-1
+# ---------------------------------------------------------------------------
+echo "[03-install-apache] [T5] Vérification des versions Apache (USN-8516-1)..."
+check_pkg_min_version() {
+    local pkg="$1" min="$2" current
+    current=$(dpkg-query -W -f='${Version}' "${pkg}" 2>/dev/null || echo "")
+    if [[ -z "${current}" ]]; then
+        echo "[03-install-apache]   ⚠ ${pkg} : non installé (skip)"
+        return 0
+    fi
+    if dpkg --compare-versions "${current}" ge "${min}"; then
+        echo "[03-install-apache]   ✅ ${pkg} ${current} >= ${min}"
+    else
+        echo "[03-install-apache]   ❌ ${pkg} ${current} < ${min} (USN non résolu)" >&2
+        return 1
+    fi
+}
+
+check_pkg_min_version apache2       "2.4.52-1ubuntu4.23"
+check_pkg_min_version apache2-bin   "2.4.52-1ubuntu4.23"
+check_pkg_min_version apache2-data  "2.4.52-1ubuntu4.23"
+check_pkg_min_version apache2-utils "2.4.52-1ubuntu4.23"
+
+# ---------------------------------------------------------------------------
 # 2. Activation des modules Apache requis
 # ---------------------------------------------------------------------------
 echo "[03-install-apache] Activation des modules Apache..."
